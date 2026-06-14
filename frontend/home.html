@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Backup Monitoring System - Home</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="topbar" id="topbar"></div>
+    <div class="tabs" id="tabs"></div>
+    <div class="main-layout">
+        <div class="instance-list-panel">
+            <div class="instance-list-header">Instances</div>
+            <div class="instance-list" id="instanceList">
+                <div class="instance-item">
+                    <div>
+                        <div class="instance-name">Loading...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="instance-details-panel" id="instanceDetailsPanel">
+            <p>Loading instance details...</p>
+        </div>
+    </div>
+    <template id="detailsTemplate">
+        <div class="panel-title">Instance Details</div>
+        <input type="hidden" id="currentInstanceId" value="">
+        <div class="details-grid">
+            <div class="detail-row">
+                <label>Instance Name</label>
+                <div class="detail-value" data-field="instanceName"></div>
+            </div>
+            <div class="detail-row">
+                <label>Last Backup Duration</label>
+                <div class="detail-value" data-field="lastBackupDuration"></div>
+            </div>
+
+            <div class="detail-row">
+                <label>Database Type</label>
+                <div class="detail-value" data-field="databaseType"></div>
+            </div>
+            <div class="detail-row">
+                <label>Last Backup File Size</label>
+                <div class="detail-value" data-field="lastBackupFileSize"></div>
+            </div>
+
+            <div class="detail-row">
+                <label>Instance IP</label>
+                <div class="detail-value" data-field="instanceIpPort"></div>
+            </div>
+            <div class="detail-row" style="grid-row: span 2;">
+                <label>Last Backup Remark</label>
+                <div class="detail-value" style="min-height:60px;" data-field="lastBackupRemark"></div>
+            </div>
+
+            <div class="detail-row">
+                <label>Status</label>
+                <div><span class="status-badge" data-field="statusBadge"></span></div>
+            </div>
+
+            <div class="detail-row">
+                <label>Last Down Time</label>
+                <div class="detail-value" data-field="lastDownTime"></div>
+            </div>
+
+            <div class="detail-row">
+                <label>Last Backup Date</label>
+                <div class="detail-value" data-field="lastBackupDate"></div>
+            </div>
+
+            <div class="detail-row">
+                <label>Last Backup Location</label>
+                <div class="detail-value" data-field="lastBackupLocation"></div>
+            </div>
+        </div>
+        <div class="configure-backup">
+            <div class="panel-title" style="border:none; margin-bottom:12px;">Configure Backup</div>
+            <div class="configure-backup-grid">
+                <div class="backup-panel">
+                    <h3>Schedule Backup</h3>
+                    <form id="scheduleForm">
+                        <div class="form-group">
+                            <label>Backup Location</label>
+                            <select name="backupLocation" id="scheduleLocation">
+                                <option value="Local Drive">Local Drive</option>
+                                <option value="Google Drive">Google Drive</option>
+                                <option value="Filer Server">Filer Server</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Path</label>
+                            <input type="text" name="backupPath" id="schedulePath" placeholder="Specify the path">
+                        </div>
+                        <div class="form-group">
+                            <label>Backup Date &amp; Time (dd.mm.yyyy hh:mm AM/PM)</label>
+                            <input type="text" name="backupDateTime" id="scheduleDateTime" placeholder="25.05.2025 10:30 AM">
+                        </div>
+                        <button type="button" class="btn btn-primary btn-sm" id="scheduleBtn">Schedule Backup</button>
+                        <div class="action-result" id="scheduleResult"></div>
+                        <div class="note">Note: If one backup is scheduled then another backup can't be scheduled.</div>
+                    </form>
+                </div>
+                <div class="backup-panel">
+                    <h3>Backup Now</h3>
+                    <form id="backupNowForm">
+                        <div class="form-group">
+                            <label>Backup Location</label>
+                            <select name="backupLocation" id="nowLocation">
+                                <option value="Local Drive">Local Drive</option>
+                                <option value="Google Drive">Google Drive</option>
+                                <option value="Filer Server">Filer Server</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Path</label>
+                            <input type="text" name="backupPath" id="nowPath" placeholder="Specify the path">
+                        </div>
+                        <button type="button" class="btn btn-success btn-sm" id="backupNowBtn">Backup Now</button>
+                        <div class="action-result" id="backupNowResult"></div>
+                    </form>
+                </div>
+
+            </div>
+        </div>
+    </template>
+    <script src="js/app.js"></script>
+    <script src="js/home.js"></script>
+</body>
+</html>
