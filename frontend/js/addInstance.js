@@ -1,18 +1,11 @@
-// addInstance.js - handles "Check Connection" and "Submit" on the Add New Instance page
-
-let connectionChecked = false; // tracks whether Check Connection was used before Submit
+let connectionChecked = false; 
 
 document.addEventListener("DOMContentLoaded", function () {
     initLayout("addInstance");
-
     document.getElementById("checkConnectionBtn").addEventListener("click", checkConnection);
     document.getElementById("addInstanceForm").addEventListener("submit", submitForm);
 });
 
-/**
- * Calls /api/instances/check-connection?ip=...&port=... to test
- * whether the given instance is reachable, and displays the result.
- */
 function checkConnection() {
     const ip = document.getElementById("instanceIp").value.trim();
     const port = document.getElementById("portNumber").value.trim();
@@ -47,13 +40,8 @@ function checkConnection() {
         });
 }
 
-/**
- * Submits the new instance form via AJAX to POST /api/instances.
- * Uses action=checkAndAdd if Check Connection was used, otherwise action=add.
- */
 function submitForm(e) {
     e.preventDefault();
-
     const instanceName = document.getElementById("instanceName").value.trim();
     const databaseType = document.getElementById("databaseType").value;
     const instanceIp = document.getElementById("instanceIp").value.trim();
@@ -80,8 +68,6 @@ function submitForm(e) {
             document.getElementById("addInstanceForm").reset();
             connectionChecked = false;
             document.getElementById("connectionResult").style.display = "none";
-
-            // Redirect to home page showing the new instance after a short delay
             setTimeout(() => {
                 window.location.href = "home.html?id=" + data.instance.instanceId;
             }, 1000);

@@ -1,12 +1,3 @@
-// app.js - shared logic for all authenticated pages (home, addInstance, three, four)
-//
-// Responsibilities:
-//  - Verify the user is logged in (via /api/session); redirect to login.html if not
-//  - Render the top bar (username + logout) and the tab navigation
-//
-// Each page must include <div id="topbar"></div> and <div id="tabs"></div>
-// placeholders, and call initLayout("activeTabId") on load.
-
 const NAV_TABS = [
     { id: "home",        label: "Home",             href: "home.html" },
     { id: "addInstance", label: "Add New Instance", href: "addInstance.html" },
@@ -14,11 +5,6 @@ const NAV_TABS = [
     { id: "four",        label: "Four",             href: "four.html" }
 ];
 
-/**
- * Checks the session, renders the top bar + tabs, and returns a Promise
- * that resolves with the username once the check completes.
- * Redirects to login.html if the user is not authenticated.
- */
 function initLayout(activeTabId) {
     return fetch("/api/session")
         .then(res => res.json())
@@ -59,14 +45,12 @@ function renderTopbar(username) {
 function renderTabs(activeTabId) {
     const tabs = document.getElementById("tabs");
     if (!tabs) return;
-
     tabs.innerHTML = NAV_TABS.map(tab => {
         const activeClass = (tab.id === activeTabId) ? "active" : "";
         return `<a href="${tab.href}" class="${activeClass}">${tab.label}</a>`;
     }).join("");
 }
 
-/** Basic HTML-escaping helper used when injecting text into innerHTML. */
 function escapeHtml(str) {
     if (str == null) return "";
     return String(str)
