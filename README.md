@@ -1,213 +1,511 @@
 # Backup Monitoring System
 
-A web-based application to monitor database server instances (running on
-different IP addresses across the company) and manage their backups — view
-status, schedule backups, and trigger immediate backups.
-
-**Tech Stack**
-- Frontend: HTML, CSS, JavaScript (vanilla, no framework, `fetch`-based AJAX)
-- Backend: Node.js + Express.js (REST JSON API)
-- Database: MySQL 8.0 (via `mysql2`)
-- Auth: express-session + bcrypt password hashing
+A web-based application to monitor database server instances running across different IP addresses and manage their backups. The system provides real-time connectivity checks, backup scheduling, manual backup execution, backup history tracking, and secure session-based authentication through a responsive web interface.
 
 ---
 
-## 1. Folder Structure
+## Features
 
-```
+* Secure login with session-based authentication
+* Responsive dashboard for desktop, tablet, and mobile devices
+* Real-time database server monitoring
+* TCP-based connectivity validation
+* Add and manage database instances
+* Schedule automated backups
+* Trigger immediate backups
+* Backup history tracking
+* Password visibility toggle on login page
+* Mobile-friendly navigation with hamburger menu
+* Session validation on protected pages
+* Backup status and health monitoring
+
+---
+
+## Tech Stack
+
+### Frontend
+
+* HTML5
+* CSS3
+* Vanilla JavaScript
+* Fetch API (AJAX)
+
+### Backend
+
+* Node.js
+* Express.js
+
+### Database
+
+* MySQL 8.0
+* mysql2
+
+### Authentication
+
+* express-session
+* bcrypt
+
+---
+
+# Folder Structure
+
+```text
 BackupMonitoringSystem/
 │
 ├── sql/
-│   └── schema.sql                  -- DB schema + seed data
+│   └── schema.sql
 │
 ├── backend/
-│   ├── server.js                   -- Express app entry point
+│   ├── server.js
 │   ├── package.json
-│   ├── .env.example                -- copy to .env and edit
+│   ├── .env.example
 │   │
 │   ├── db/
-│   │   └── pool.js                 -- MySQL connection pool
+│   │   └── pool.js
 │   │
 │   ├── middleware/
-│   │   └── auth.js                 -- requireAuth session guard
+│   │   └── auth.js
 │   │
 │   ├── routes/
-│   │   ├── auth.js                 -- /api/session, /api/login, /api/logout
-│   │   ├── instances.js            -- /api/instances/*
-│   │   └── backup.js               -- /api/backup/*
+│   │   ├── auth.js
+│   │   ├── instances.js
+│   │   └── backup.js
 │   │
 │   └── scripts/
-│       ├── hashPassword.js         -- print a bcrypt hash for any password
-│       └── seedAdmin.js            -- create/update the default admin user
+│       ├── hashPassword.js
+│       └── seedAdmin.js
 │
 └── frontend/
     ├── css/
     │   └── style.css
+    │
     ├── js/
-    │   ├── app.js                  -- shared topbar/tabs/session check
+    │   ├── app.js
     │   ├── login.js
     │   ├── home.js
-    │   └── addInstance.js
+    │   ├── addInstance.js
+    │   ├── backupHistory.js
+    │   └── reports.js
     │
-    ├── login.html        -- Login page (wireframe page 1)
-    ├── home.html          -- Dashboard: instance list + details + backup config (wireframe page 2)
-    ├── addInstance.html   -- Add New Instance form (wireframe page 3)
-    ├── three.html         -- Placeholder tab
-    └── four.html          -- Placeholder tab
+    ├── login.html
+    ├── home.html
+    ├── addInstance.html
+    ├── backupHistory.html
+    └── reports.html
+```
+
+---
+
+## High Level System Flow
+
+```mermaid
+flowchart TD
+
+    User[Administrator]
+
+    User --> Login[Login Page]
+
+    Login --> Dashboard[Dashboard]
+
+    Dashboard --> ViewInstances[View Instances]
+    Dashboard --> AddInstance[Add New Instance]
+    Dashboard --> BackupHistory[Backup History]
+
+    AddInstance --> ConnectionCheck[TCP Connection Check]
+
+    ConnectionCheck -->|Connected| SaveInstance[Save Instance]
+    ConnectionCheck -->|Failed| Retry[Retry Configuration]
+
+    SaveInstance --> MonitoredServers[Monitored Database Servers]
+
+    Dashboard --> ScheduleBackup[Schedule Backup]
+    Dashboard --> BackupNow[Backup Now]
+
+    ScheduleBackup --> BackupEngine[Backup Engine]
+    BackupNow --> BackupEngine
+
+    BackupEngine --> RemoteServers[(Remote DB Servers)]
+
+    RemoteServers --> BackupStorage[(Backup Storage)]
+
+    BackupEngine --> History[(Backup History Table)]
+
+    History --> BackupHistory
+
 ```
 ---
 
-## 2. Database Setup
+# Database Setup
 
-1. Start MySQL and run the schema script:
-   ```bash
-   mysql -u root -p < sql/schema.sql
-   ```
-   This creates the database `backup_monitor_db` with tables:
-   - `users` — login credentials
-   - `instances` — monitored DB server instances (ICARD, etc., with seed data)
-   - `backup_schedules` — scheduled backup jobs
-   - `backup_history` — log of every backup run
+### 1. Create the Database
 
-2. Create the default admin user (bcrypt hashes can't be hard-coded safely
-   in the SQL file, so this is done via a script — see step 4 below).
+Run the schema file:
+
+```bash
+mysql -u root -p < sql/schema.sql
+```
+
+This creates the database:
+
+```text
+backup_monitor_db
+```
+
+and the following tables:
+
+* users
+* instances
+* backup_schedules
+* backup_history
+
 ---
 
-## 3. Backend Setup
+### 2. Default Admin User
+
+The admin user is created separately using a script because passwords are stored as bcrypt hashes.
+
+---
+
+# Backend Setup
+
+Install dependencies:
 
 ```bash
 cd backend
 npm install
+```
+
+Copy environment file:
+
+```bash
 cp .env.example .env
 ```
 
-Edit `.env` with your MySQL credentials:
-```
+Update `.env`:
+
+```env
 DB_HOST=localhost
 DB_PORT=3306
 DB_USER=root
-DB_PASSWORD=<your_mysql_password>
+DB_PASSWORD=your_mysql_password
 DB_NAME=backup_monitor_db
-SESSION_SECRET=some-long-random-string
+
+SESSION_SECRET=your_secure_session_secret
+
 PORT=3000
 ```
 
 ---
 
-## 4. Create the Default Admin User
+# Create Admin User
 
 ```bash
 cd backend
 node scripts/seedAdmin.js
 ```
 
-This creates a user `admin` with password `admin123` (or pass your own:
-`node scripts/seedAdmin.js myuser mypassword`).
+Default credentials:
+
+```text
+Username: admin
+Password: admin123
+```
+
+You can also create custom credentials:
+
+```bash
+node scripts/seedAdmin.js myuser mypassword
+```
 
 ---
 
-## 5. Run the App
+# Run the Application
+
+### Production
 
 ```bash
-cd backend
 npm start
 ```
 
-Or for auto-reload during development:
+### Development
+
 ```bash
 npm run dev
 ```
 
-Open your browser at:
-```
+Open:
+
+```text
 http://localhost:3000
 ```
 
-Log in with `admin` / `admin123` (or whatever you set in step 4).
+Login using:
+
+```text
+admin / admin123
+```
 
 ---
 
-## 6. API Reference
+# API Reference
 
-| Method | Endpoint                              | Auth | Description |
-|--------|----------------------------------------|------|-------------|
-| GET    | `/api/session`                          | No   | `{ loggedIn, username }` |
-| POST   | `/api/login`                            | No   | Body: `{ username, password }` → `{ success, username? }` |
-| GET    | `/api/logout`                           | No   | Destroys session |
-| GET    | `/api/instances`                        | Yes  | List all instances |
-| GET    | `/api/instances/:id`                    | Yes  | Single instance details |
-| GET    | `/api/instances/check-connection?ip=&port=` | Yes | `{ status: "Connected"\|"Disconnected" }` |
-| POST   | `/api/instances`                        | Yes  | Body: `{ action: "add"\|"checkAndAdd", instanceName, databaseType, instanceIp, portNumber }` |
-| POST   | `/api/backup/schedule`                  | Yes  | Body: `{ instanceId, backupLocation, backupPath, backupDateTime }` (format `dd.mm.yyyy hh:mm AM/PM`) |
-| POST   | `/api/backup/now`                       | Yes  | Body: `{ instanceId, backupLocation, backupPath }` |
+| Method | Endpoint                                    | Auth | Description              |
+| ------ | ------------------------------------------- | ---- | ------------------------ |
+| GET    | `/api/session`                              | No   | Check login status       |
+| POST   | `/api/login`                                | No   | User login               |
+| GET    | `/api/logout`                               | No   | Logout user              |
+| GET    | `/api/instances`                            | Yes  | Fetch all instances      |
+| GET    | `/api/instances/:id`                        | Yes  | Fetch instance details   |
+| GET    | `/api/instances/check-connection?ip=&port=` | Yes  | Check TCP connectivity   |
+| POST   | `/api/instances`                            | Yes  | Add database instance    |
+| POST   | `/api/backup/schedule`                      | Yes  | Schedule backup          |
+| POST   | `/api/backup/now`                           | Yes  | Trigger immediate backup |
 
-"Yes" auth endpoints require an active session (set via `/api/login`);
-unauthenticated requests get `401 { error, loggedIn: false }`.
-
----
-
-## 7. Application Flow (maps to wireframe)
-
-### Page 1 — Login (`login.html`)
-- Posts `{ username, password }` to `/api/login`.
-- On success: server creates a session cookie, frontend redirects to `home.html`.
-- On failure: error message shown inline.
-- All other pages call `/api/session` on load (via `app.js`/`initLayout`)
-  and redirect to `login.html` if not authenticated.
-
-### Page 2 — Home (`home.html`)
-- **Left panel**: List of all instances (name + IP + green/red status dot),
-  fetched from `GET /api/instances`. Clicking an instance re-renders the
-  details panel without a full page reload.
-- **Right panel — Instance Details**: Instance Name, Database Type,
-  Instance IP:Port, Status, Last Down Time, Last Backup Date, Last Backup
-  Location, Last Backup Duration, Last Backup File Size, Last Backup Remark.
-- **Configure Backup**:
-  - *Schedule Backup* (left): Backup Location (Local Drive / Google Drive /
-    Filer Server), Path, and Date & Time (`dd.mm.yyyy hh:mm AM/PM`) →
-    `POST /api/backup/schedule`. As per the wireframe note, scheduling a new
-    backup automatically cancels any previously active schedule for that
-    instance.
-  - *Backup Now* (right): Backup Location + Path → `POST /api/backup/now`.
-    Logs a `backup_history` row, updates the instance's "Last Backup"
-    fields, then the dashboard re-fetches instances to show the new values.
-
-### Page 3 — Add New Instance (`addInstance.html`)
-- Fields: Instance Name, Database Type, Instance IP, Port Number.
-- **Check Connection** → `GET /api/instances/check-connection?ip=&port=`,
-  which opens a raw TCP socket to the given IP:port (3-second timeout) and
-  reports Connected/Disconnected.
-- **Submit** → `POST /api/instances` (`action: "add"` normally, or
-  `"checkAndAdd"` if Check Connection was used first, which also stores the
-  resulting status).
-
-### Tabs "Three" / "Four"
-- Placeholder pages matching the wireframe's extra tabs, ready for future
-  features (e.g. Backup History/Reports, Settings/User Management).
+Protected endpoints require an active authenticated session.
 
 ---
 
-## 8. Notes on "Different Servers / IP Addresses"
+# Application Flow
 
-Each row in `instances` represents a separate database server identified by
-its own `instance_ip` + `port_number`. The **Check Connection** feature
-(`routes/instances.js` → `checkTcpConnection`) opens a real TCP socket to
-that IP/port to verify reachability — this is how the system monitors
-servers across the company's network regardless of which machine they run on.
+## Login Page
 
-The actual backup execution (`mysqldump`, Oracle `expdp`/RMAN, etc.) is
-stubbed in `routes/backup.js` with a simulated duration/file size — replace
-that section with real `child_process` calls to your backup tooling for
-each database type in production.
+### Features
+
+* Session-based authentication
+* Secure password verification using bcrypt
+* Inline error handling
+* Password visibility toggle
+* Responsive design
+
+### Flow
+
+1. User enters credentials.
+2. Credentials are sent to `/api/login`.
+3. Backend validates user.
+4. Session is created.
+5. User is redirected to Dashboard.
+6. Unauthorized users are redirected back to Login.
 
 ---
 
-## 9. Security Notes
+## Dashboard (Home)
 
-- Passwords are hashed with bcrypt (cost factor 10).
-- Sessions are stored server-side via `express-session` (default in-memory
-  store — for production, use a persistent store like
-  `connect-mysql-session` or Redis).
-- Set a strong, random `SESSION_SECRET` in `.env` for production.
-- Consider adding HTTPS (`cookie.secure = true`) and rate-limiting on
-  `/api/login` for production deployments.
+The dashboard provides a complete overview of all monitored database instances.
+
+### Instance List
+
+Displays:
+
+* Instance Name
+* Instance IP Address
+* Connection Status
+
+### Instance Details
+
+Displays:
+
+* Instance Name
+* Database Type
+* Instance IP and Port
+* Current Status
+* Last Down Time
+* Last Backup Date
+* Last Backup Location
+* Last Backup Duration
+* Last Backup File Size
+* Last Backup Remarks
+
+### Configure Backup
+
+#### Schedule Backup
+
+Allows administrators to:
+
+* Select backup location
+* Define backup path
+* Configure backup date and time
+
+The system ensures only one active backup schedule exists per instance.
+
+#### Backup Now
+
+Allows immediate backup execution.
+
+Upon successful backup:
+
+* Backup history is updated
+* Instance metadata is refreshed
+* Dashboard values are automatically updated
+
+---
+
+## Add New Instance
+
+Administrators can register new database servers.
+
+### Required Information
+
+* Instance Name
+* Database Type
+* Instance IP Address
+* Port Number
+
+### Optional Information
+
+Remote database credentials:
+
+* Database Username
+* Database Password
+
+These credentials are used during backup execution and are never displayed in the UI after being saved.
+
+### Check Connection
+
+The Check Connection feature performs a real TCP socket connection test.
+
+Possible results include:
+
+* Connected
+* Disconnected
+* Connection Timeout
+* Connection Refused
+
+This validates network accessibility before the instance is added.
+
+### Submit
+
+Adds the instance to the monitoring system and stores its configuration in the database.
+
+---
+
+## Backup History
+
+The Backup History page provides a record of all executed backups.
+
+Information displayed includes:
+
+* Backup Date
+* Backup Location
+* Backup Duration
+* Backup File Size
+* Backup Status
+* Backup Remarks
+
+This helps administrators audit and track backup operations.
+
+---
+
+## Reports
+
+The Reports section is reserved for future reporting and analytics features.
+
+Potential enhancements include:
+
+* Backup success statistics
+* Storage utilization reports
+* Server availability reports
+* Historical trend analysis
+
+---
+
+# Mobile Responsiveness
+
+The application is fully responsive and optimized for mobile devices.
+
+Features include:
+
+* Responsive layouts
+* Mobile-friendly forms
+* Adaptive dashboard panels
+* Hamburger navigation menu
+* Compact top bar
+* Optimized spacing for small screens
+
+---
+
+# Monitoring Architecture
+
+Each database server is represented as an instance identified by:
+
+```text
+Instance IP + Port
+```
+
+The monitoring module verifies connectivity by opening a real TCP socket to the target host.
+
+This approach allows monitoring of servers located anywhere on the organization's network, provided they are reachable.
+
+---
+
+# Backup Architecture
+
+The current implementation supports:
+
+* Backup scheduling
+* Backup history logging
+* Manual backup execution
+
+Backup execution currently uses simulated backup metadata for demonstration purposes.
+
+In production environments, this can be replaced with actual backup tools such as:
+
+### MySQL
+
+```bash
+mysqldump
+```
+
+### Oracle
+
+```bash
+expdp
+```
+
+or
+
+```bash
+RMAN
+```
+
+### PostgreSQL
+
+```bash
+pg_dump
+```
+
+### SQL Server
+
+```bash
+sqlcmd
+```
+
+or SQL Server Agent jobs.
+
+---
+
+# Security Notes
+
+* Passwords are hashed using bcrypt.
+* Sessions are managed using express-session.
+* Protected routes require authentication.
+* Database credentials are never exposed through the UI after saving.
+* Unauthorized users are redirected to Login.
+* Strong SESSION_SECRET values should be used in production.
+* HTTPS should be enabled in production environments.
+* Login rate limiting is recommended for production deployments.
+* Persistent session stores such as Redis or MySQL should replace the default memory store in production.
+
+---
+
+# Future Enhancements
+
+* Email backup notifications
+* Cloud storage integration
+* Backup restore functionality
+* Backup retention policies
+* Multi-user support
+* Role-based access control
+* Advanced monitoring dashboards
+* Backup analytics and reporting
+* Multi-database enhancements
+* Alerting and notification systems

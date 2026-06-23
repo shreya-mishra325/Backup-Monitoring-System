@@ -5,27 +5,67 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Backup Monitoring System - Login</title>
     <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 </head>
 <body class="login-body">
     <div class="login-container">
         <div class="login-card">
+            <div class="login-logo">
+                <i class="fas fa-database"></i>
+            </div>
             <h1 class="login-title">Backup Monitoring System</h1>
-            <p class="login-subtitle">Sign in to continue</p>
-            <div id="errorBox" class="error-box" style="display:none;"></div>
+            <p class="login-subtitle">
+                Secure monitoring and backup management platform
+            </p>
+            <div id="errorBox" class="login-error-box" style="display:none;"></div>
             <form id="loginForm">
-                <div class="form-group">
-                    <label for="username">User name</label>
-                    <input type="text" id="username" name="username" placeholder="User name" required>
+                <div class="login-field">
+                    <label for="username">Username</label>
+                    <div class="login-input-wrapper">
+                        <i class="fas fa-user login-input-icon"></i>
+                        <input
+                            type="text"
+                            id="username"
+                            name="username"
+                            placeholder="Enter username"
+                            required
+                        >
+                    </div>
                 </div>
 
-                <div class="form-group">
+                <div class="login-field">
                     <label for="password">Password</label>
-                    <input type="password" id="password" name="password" placeholder="Password" required>
+                    <div class="login-input-wrapper">
+                        <i class="fas fa-lock login-input-icon"></i>
+                        <input
+                            type="password"
+                            id="password"
+                            name="password"
+                            placeholder="Enter password"
+                            required
+                        >
+                        <button
+                            type="button"
+                            class="login-password-toggle"
+                            id="togglePassword"
+                        >
+                            <i class="fas fa-eye-slash"></i>
+                        </button>
+                    </div>
                 </div>
 
-                <button type="submit" class="btn btn-primary login-btn">Login</button>
+                <button
+                    type="submit"
+                    class="btn btn-primary login-submit-btn"
+                >
+                    <i class="fas fa-right-to-bracket"></i>
+                    Sign In
+                </button>
             </form>
-            <p class="login-hint">Default credentials: <strong>admin / admin123</strong></p>
+            <div class="login-footer">
+                <span>Default Credentials</span>
+                <strong>admin / admin123</strong>
+            </div>
         </div>
     </div>
     <script src="js/login.js"></script>

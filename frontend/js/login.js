@@ -1,10 +1,17 @@
-// login.js - handles the login form via the /api/login JSON endpoint
-
 document.addEventListener("DOMContentLoaded", function () {
     const form = document.getElementById("loginForm");
     const errorBox = document.getElementById("errorBox");
+    const togglePassword = document.getElementById('togglePassword');
+    const passwordInput = document.getElementById('password');
 
-    // If already logged in, skip straight to the dashboard
+    togglePassword.addEventListener('click', () => {
+        const isHidden = passwordInput.type === 'password';
+        passwordInput.type = isHidden ? 'text' : 'password';
+        togglePassword.innerHTML = isHidden
+            ? '<i class="fas fa-eye"></i>'
+            : '<i class="fas fa-eye-slash"></i>';
+    });
+
     fetch("/api/session")
         .then(res => res.json())
         .then(data => {
@@ -12,7 +19,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 window.location.href = "home.html";
             }
         })
-        .catch(() => { /* ignore - show login form as normal */ });
+        .catch(() => {});
 
     form.addEventListener("submit", function (e) {
         e.preventDefault();

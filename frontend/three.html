@@ -3,23 +3,153 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Backup Monitoring System - Three</title>
+    <title>Backup Monitoring System - Reports</title>
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
     <div class="topbar" id="topbar"></div>
     <div class="tabs" id="tabs"></div>
 
-    <div class="placeholder-container">
-        <h2>Three</h2>
-        <p>This tab is reserved for future functionality (e.g. Backup History / Reports).</p>
+    <div class="instance-details-panel" style="margin:24px;">
+
+        <div class="panel-title">
+            Backup Reports
+        </div>
+
+        <div class="details-grid">
+
+            <div class="detail-row">
+                <label>Total Instances</label>
+                <div class="detail-value">12</div>
+            </div>
+
+            <div class="detail-row">
+                <label>Total Backups</label>
+                <div class="detail-value">156</div>
+            </div>
+
+            <div class="detail-row">
+                <label>Successful Backups</label>
+                <div class="detail-value">151</div>
+            </div>
+
+            <div class="detail-row">
+                <label>Failed Backups</label>
+                <div class="detail-value">5</div>
+            </div>
+
+            <div class="detail-row">
+                <label>Success Rate</label>
+                <div class="detail-value">96.8%</div>
+            </div>
+
+            <div class="detail-row">
+                <label>Average Backup Size</label>
+                <div class="detail-value">18.4 MB</div>
+            </div>
+
+        </div>
+
     </div>
 
+    <div class="instance-details-panel" style="margin:24px; margin-top:0;">
+
+        <div class="panel-title">
+            Instance-wise Backup Summary
+        </div>
+
+        <table class="report-table">
+
+            <thead>
+                <tr>
+                    <th>Instance Name</th>
+                    <th>Total Backups</th>
+                    <th>Successful</th>
+                    <th>Failed</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                <tr>
+                    <td>ICARD</td>
+                    <td>45</td>
+                    <td>43</td>
+                    <td>2</td>
+                </tr>
+
+                <tr>
+                    <td>CRM-DB</td>
+                    <td>38</td>
+                    <td>37</td>
+                    <td>1</td>
+                </tr>
+
+                <tr>
+                    <td>HRMS</td>
+                    <td>52</td>
+                    <td>50</td>
+                    <td>2</td>
+                </tr>
+            </tbody>
+
+        </table>
+
+    </div>
+
+    <div class="instance-details-panel" style="margin:24px; margin-top:0;">
+
+        <div class="panel-title">
+            Recent Backup Activity
+        </div>
+
+        <table class="report-table">
+
+            <thead>
+                <tr>
+                    <th>Date & Time</th>
+                    <th>Instance</th>
+                    <th>Status</th>
+                    <th>Remarks</th>
+                </tr>
+            </thead>
+
+            <tbody>
+
+                <tr>
+                    <td>25/06/2026 10:30 AM</td>
+                    <td>ICARD</td>
+                    <td>
+                        <span class="status-badge connected">
+                            SUCCESS
+                        </span>
+                    </td>
+                    <td>Backup completed successfully.</td>
+                </tr>
+
+                <tr>
+                    <td>25/06/2026 09:45 AM</td>
+                    <td>CRM-DB</td>
+                    <td>
+                        <span class="status-badge disconnected">
+                            FAILED
+                        </span>
+                    </td>
+                    <td>Connection timeout.</td>
+                </tr>
+            </tbody>
+        </table>
+        <div style="margin-top:16px;">
+            <button class="btn btn-primary">
+                Export CSV
+            </button>
+        </div>
+
+    </div>
     <script src="js/app.js"></script>
     <script>
-        document.addEventListener("DOMContentLoaded", function () {
-            initLayout("three");
-        });
+    document.addEventListener("DOMContentLoaded", function () {
+        initLayout("three");
+    });
     </script>
 </body>
 </html>

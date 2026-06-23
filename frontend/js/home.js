@@ -1,6 +1,3 @@
-// home.js - dashboard logic: loads instances list, renders selected instance
-// details + Configure Backup section, and handles Schedule/Backup Now actions.
-
 let allInstances = [];
 let selectedInstanceId = null;
 
@@ -10,14 +7,11 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 });
 
-/** Fetches all instances and renders the left-hand list. */
 function loadInstances() {
     fetch("/api/instances")
         .then(res => res.json())
         .then(instances => {
             allInstances = instances;
-
-            // Determine which instance to show: from URL ?id=, or the first one
             const params = new URLSearchParams(window.location.search);
             const idParam = params.get("id");
 
@@ -39,7 +33,6 @@ function loadInstances() {
         });
 }
 
-/** Renders the left-hand instance list with status dots. */
 function renderInstanceList() {
     const listEl = document.getElementById("instanceList");
 
@@ -68,13 +61,10 @@ function renderInstanceList() {
             </div>`;
     }).join("");
 
-    // Click handlers - select instance without full page reload
     listEl.querySelectorAll(".instance-item[data-id]").forEach(item => {
         item.addEventListener("click", function () {
             const id = parseInt(this.getAttribute("data-id"), 10);
             selectedInstanceId = id;
-
-            // Update the URL (so refresh/bookmark keeps the selection) without reloading
             const url = new URL(window.location.href);
             url.searchParams.set("id", id);
             window.history.replaceState({}, "", url);
@@ -85,7 +75,6 @@ function renderInstanceList() {
     });
 }
 
-/** Renders the right-hand details panel + Configure Backup section for the selected instance. */
 function renderDetailsPanel() {
     const panel = document.getElementById("instanceDetailsPanel");
 
@@ -100,12 +89,10 @@ function renderDetailsPanel() {
         return;
     }
 
-    // Clone the template into the panel
     const template = document.getElementById("detailsTemplate");
     panel.innerHTML = "";
     panel.appendChild(template.content.cloneNode(true));
 
-    // Populate fields
     document.getElementById("currentInstanceId").value = inst.instanceId;
     setField("instanceName", inst.instanceName);
     setField("databaseType", inst.databaseType);
@@ -116,13 +103,13 @@ function renderDetailsPanel() {
     setField("lastDownTime", formatDateTime(inst.lastDownTime));
     setField("lastBackupDate", formatDateTime(inst.lastBackupDate));
     setField("lastBackupLocation", inst.lastBackupLocation || "-");
+    setField("dbUsername", inst.dbUsername || "-");
 
     const statusBadge = panel.querySelector('[data-field="statusBadge"]');
     const statusClass = (inst.status === "Connected") ? "connected" : "disconnected";
     statusBadge.textContent = inst.status;
     statusBadge.className = "status-badge " + statusClass;
 
-    // Wire up Configure Backup buttons
     document.getElementById("scheduleBtn").addEventListener("click", submitSchedule);
     document.getElementById("backupNowBtn").addEventListener("click", submitBackupNow);
 
@@ -132,7 +119,6 @@ function renderDetailsPanel() {
     }
 }
 
-/** Formats an ISO date string (or null) into a readable local string, or "-". */
 function formatDateTime(value) {
     if (!value) return "-";
     const date = new Date(value);
@@ -140,7 +126,6 @@ function formatDateTime(value) {
     return date.toLocaleString();
 }
 
-/** Submits the "Schedule Backup" form via AJAX to /api/backup/schedule. */
 function submitSchedule() {
     const instanceId = document.getElementById("currentInstanceId").value;
     const backupLocation = document.getElementById("scheduleLocation").value;
@@ -168,7 +153,6 @@ function submitSchedule() {
     });
 }
 
-/** Submits the "Backup Now" form via AJAX to /api/backup/now, then refreshes details. */
 function submitBackupNow() {
     const instanceId = document.getElementById("currentInstanceId").value;
     const backupLocation = document.getElementById("nowLocation").value;
@@ -192,7 +176,6 @@ function submitBackupNow() {
     .then(data => {
         if (data.success) {
             showResult(resultBox, data.message + " (Duration: " + data.duration + ", Size: " + data.fileSize + ")", true);
-            // Re-fetch instance list + details to show updated "Last Backup" info
             setTimeout(loadInstances, 800);
         } else {
             showResult(resultBox, data.message, false);

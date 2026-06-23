@@ -1,9 +1,23 @@
 const NAV_TABS = [
     { id: "home",        label: "Home",             href: "home.html" },
     { id: "addInstance", label: "Add New Instance", href: "addInstance.html" },
-    { id: "three",       label: "Three",            href: "three.html" },
+    { id: "three",       label: "Backup History",            href: "three.html" },
     { id: "four",        label: "Four",             href: "four.html" }
 ];
+
+function renderTopbar() {
+    const topbar = document.getElementById("topbar");
+
+    topbar.innerHTML = `
+        <button class="mobile-menu-btn" id="mobileMenuBtn">
+            ☰
+        </button>
+        <div class="brand">Backup Monitoring System</div>
+        <div class="user-info">
+            <a href="#" id="logoutBtn">Logout</a>
+        </div>
+    `;
+}
 
 function initLayout(activeTabId) {
     return fetch("/api/session")
@@ -27,7 +41,12 @@ function renderTopbar(username) {
     if (!topbar) return;
 
     topbar.innerHTML = `
+        <button class="mobile-menu-btn" id="mobileMenuBtn">
+            ☰
+        </button>
+
         <div class="brand">Backup Monitoring System</div>
+
         <div class="user-info">
             <span>Welcome, ${escapeHtml(username)}</span>
             <a href="#" id="logoutLink">Logout</a>
@@ -40,6 +59,15 @@ function renderTopbar(username) {
             .then(() => { window.location.href = "login.html"; })
             .catch(() => { window.location.href = "login.html"; });
     });
+
+    const menuBtn = document.getElementById("mobileMenuBtn");
+    const tabs = document.getElementById("tabs");
+
+    if (menuBtn && tabs) {
+        menuBtn.addEventListener("click", () => {
+            tabs.classList.toggle("show");
+        });
+    }
 }
 
 function renderTabs(activeTabId) {
