@@ -1,7 +1,7 @@
 const NAV_TABS = [
     { id: "home",        label: "Home",             href: "home.html" },
     { id: "addInstance", label: "Add New Instance", href: "addInstance.html" },
-    { id: "three",       label: "Backup History",            href: "three.html" },
+    { id: "backupHistory", label: "Backup History",   href: "reports.html" },
     { id: "four",        label: "Four",             href: "four.html" }
 ];
 

@@ -4,6 +4,13 @@ let selectedInstanceId = null;
 document.addEventListener("DOMContentLoaded", function () {
     initLayout("home").then(() => {
         loadInstances();
+        document.getElementById("cancelEditBtn").onclick = closeEditModal;
+        document.getElementById("saveEditBtn").onclick = saveInstanceChanges;
+        document.getElementById("cancelDeleteBtn").onclick = closeDeleteModal;
+        document.getElementById("confirmDeleteBtn").onclick = confirmDelete;
+        setInterval(async () => {
+        await refreshStatuses();
+    }, 10000);
     });
 });
 
@@ -52,13 +59,33 @@ function renderInstanceList() {
         const statusClass = (inst.status === "Connected") ? "connected" : "disconnected";
 
         return `
-            <div class="instance-item ${isActive ? "active" : ""}" data-id="${inst.instanceId}">
-                <div>
+        <div class="instance-item ${isActive ? "active" : ""}" data-id="${inst.instanceId}">
+
+            <div class="instance-info">
+                <span class="status-dot ${statusClass}"></span>
+                <div class="instance-text">
                     <div class="instance-name">${escapeHtml(inst.instanceName)}</div>
                     <div class="instance-ip">${escapeHtml(inst.instanceIp)}</div>
                 </div>
-                <div class="status-dot ${statusClass}" title="${escapeHtml(inst.status)}"></div>
-            </div>`;
+        </div>
+
+    <div class="instance-actions">
+        <button
+            class="icon-btn edit-btn"
+            onclick="event.stopPropagation(); editInstance(${inst.instanceId})"
+            title="Edit Instance">
+            <i class="fa-solid fa-pen-to-square"></i>
+        </button>
+
+        <button
+            class="icon-btn delete-btn"
+            onclick="event.stopPropagation(); deleteInstance(${inst.instanceId})"
+            title="Delete Instance">
+            <i class="fa-solid fa-trash-can"></i>
+        </button>
+    </div>
+</div>
+`;
     }).join("");
 
     listEl.querySelectorAll(".instance-item[data-id]").forEach(item => {
@@ -73,6 +100,31 @@ function renderInstanceList() {
             renderDetailsPanel();
         });
     });
+}
+
+async function editInstance(id) {
+    const inst = allInstances.find(i => i.instanceId === id);
+    if (!inst) return;
+
+    document.getElementById("editInstanceId").value = inst.instanceId;
+    document.getElementById("editInstanceName").value = inst.instanceName;
+    document.getElementById("editDatabaseType").value = inst.databaseType;
+    document.getElementById("editInstanceIp").value = inst.instanceIp;
+    document.getElementById("editPortNumber").value = inst.portNumber;
+    document.getElementById("editDbUsername").value = inst.dbUsername || "";
+    document.getElementById("editDbPassword").value = "";
+
+    document.getElementById("editModal").classList.add("show");
+}
+
+function deleteInstance(id) {
+    const inst = allInstances.find(i => i.instanceId === id);
+    if (!inst) return;
+
+    document.getElementById("deleteInstanceName").textContent = inst.instanceName;
+    document.getElementById("confirmDeleteBtn").dataset.id = id;
+
+    document.getElementById("deleteModal").classList.add("show");
 }
 
 function renderDetailsPanel() {
@@ -184,6 +236,60 @@ function submitBackupNow() {
     .catch(err => {
         showResult(resultBox, "Error running backup: " + err, false);
     });
+}
+
+function closeEditModal() {
+    document.getElementById("editModal").classList.remove("show");
+}
+
+function closeDeleteModal() {
+    document.getElementById("deleteModal").classList.remove("show");
+}
+
+async function saveInstanceChanges() {
+    const id = document.getElementById("editInstanceId").value;
+
+    const body = {
+        instanceName: document.getElementById("editInstanceName").value.trim(),
+        instanceIp: document.getElementById("editInstanceIp").value.trim(),
+        portNumber: document.getElementById("editPortNumber").value.trim(),
+        dbUsername: document.getElementById("editDbUsername").value.trim(),
+        dbPassword: document.getElementById("editDbPassword").value
+    };
+
+    const res = await fetch(`/api/instances/${id}`, {
+        method: "PUT",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify(body)
+    });
+
+    const data = await res.json();
+
+    if (data.success) {
+        closeEditModal();
+        loadInstances();
+    } else {
+        alert(data.message);
+    }
+}
+
+async function confirmDelete() {
+    const id = document.getElementById("confirmDeleteBtn").dataset.id;
+
+    const res = await fetch(`/api/instances/${id}`, {
+        method: "DELETE"
+    });
+
+    const data = await res.json();
+
+    if (data.success) {
+        closeDeleteModal();
+        loadInstances();
+    } else {
+        alert(data.message);
+    }
 }
 
 function showResult(element, message, success) {

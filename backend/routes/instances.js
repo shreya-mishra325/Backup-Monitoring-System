@@ -39,11 +39,45 @@ function checkTcpConnection(ip, port, timeoutMs = 3000) {
 
 router.get('/', async (req, res) => {
     try {
-        const [rows] = await pool.query('SELECT * FROM instances ORDER BY instance_name');
-        res.json(rows.map(r => mapInstance(r, false)));
+        const [rows] = await pool.query(
+            'SELECT * FROM instances ORDER BY instance_name'
+        );
+        return res.json(
+            rows.map(r => mapInstance(r, false))
+        );
     } catch (err) {
         console.error('Error fetching instances:', err);
-        res.status(500).json({ error: 'Failed to fetch instances.' });
+        return res.status(500).json({
+            error: 'Failed to fetch instances.'
+        });
+    }
+});
+
+router.get('/refresh-status', async (req, res) => {
+    try {
+        const [rows] = await pool.query(
+            'SELECT instance_id, instance_ip, port_number FROM instances'
+        );
+        for (const row of rows) {
+            const connected = await checkTcpConnection(
+                row.instance_ip,
+                row.port_number,
+                1000
+            );
+            await pool.query(
+                'UPDATE instances SET status=? WHERE instance_id=?',
+                [
+                    connected ? 'Connected' : 'Disconnected',
+                    row.instance_id
+                ]
+            );
+        }
+        return res.json({ success: true });
+    } catch (err) {
+        console.error(err);
+        return res.status(500).json({
+            success: false
+        });
     }
 });
 
@@ -161,6 +195,58 @@ function mapInstance(row, includePassword = false) {
     if (includePassword) obj.dbPassword = row.db_password;
     return obj;
 }
+
+router.put('/:id', async (req, res) => {
+    const id = parseInt(req.params.id, 10);
+
+    const {
+        instanceName,
+        instanceIp,
+        portNumber,
+        dbUsername,
+        dbPassword
+    } = req.body;
+
+    try {
+        await pool.query(
+            `UPDATE instances
+             SET instance_name = ?,
+                 instance_ip = ?,
+                 port_number = ?,
+                 db_username = ?,
+                 db_password = ?
+             WHERE instance_id = ?`,
+            [
+                instanceName,
+                instanceIp,
+                portNumber,
+                dbUsername,
+                dbPassword,
+                id
+            ]
+        );
+        res.json({
+            success: true,
+            message: "Instance updated successfully."
+        });
+
+    } catch (err) {
+        console.error("Error updating instance:", err);
+        res.status(500).json({
+            success: false,
+            message: "Failed to update instance."
+        });
+    }
+});
+router.delete('/:id', async (req, res) => {
+    const id = parseInt(req.params.id, 10);
+
+    await pool.query(
+        'DELETE FROM instances WHERE instance_id=?',
+        [id]
+    );
+    res.json({ success: true });
+});
 
 module.exports = router;
 module.exports.checkTcpConnection = checkTcpConnection;

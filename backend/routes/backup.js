@@ -360,7 +360,6 @@ async function reloadScheduledJobs() {
                 runAt:          new Date(row.backup_datetime),
             });
         });
-
         if (rows.length > 0) {
             console.log(`[Scheduler] Reloaded ${rows.length} pending scheduled job(s).`);
         }
@@ -369,5 +368,143 @@ async function reloadScheduledJobs() {
     }
 }
 reloadScheduledJobs();
+
+router.get('/reports', async (req, res) => {
+    try {
+        const [[instanceCount]] = await pool.query(`
+            SELECT COUNT(*) AS totalInstances
+            FROM instances
+        `);
+        const [[backupSummary]] = await pool.query(`
+            SELECT
+                COUNT(*) AS totalBackups,
+                SUM(result_status='Success') AS successfulBackups,
+                SUM(result_status='Failed') AS failedBackups
+            FROM backup_history
+        `);
+
+        const [sizeRows] = await pool.query(`
+            SELECT file_size
+            FROM backup_history
+            WHERE file_size IS NOT NULL
+        `);
+
+        let totalSize = 0;
+
+        sizeRows.forEach(r => {
+            if (!r.file_size) return;
+            const value = parseFloat(r.file_size);
+            if (isNaN(value)) return;
+            if (r.file_size.includes('KB'))
+                totalSize += value / 1024;
+            else if (r.file_size.includes('MB'))
+                totalSize += value;
+            else if (r.file_size.includes('GB'))
+                totalSize += value * 1024;
+        });
+
+        const averageSize = sizeRows.length === 0 ? "0 MB" : (totalSize / sizeRows.length).toFixed(2) + " MB";
+        const total = backupSummary.totalBackups || 0;
+        const success = backupSummary.successfulBackups || 0;
+        const successRate = total === 0 ? "0%" : ((success * 100) / total).toFixed(1) + "%";
+        const [instanceSummary] = await pool.query(`
+            SELECT
+                i.instance_name AS instanceName,
+                COUNT(h.history_id) AS total,
+                SUM(h.result_status='Success') AS success,
+                SUM(h.result_status='Failed') AS failed
+            FROM instances i
+            LEFT JOIN backup_history h
+            ON i.instance_id=h.instance_id
+            GROUP BY i.instance_id
+            ORDER BY i.instance_name
+        `);
+
+        const [recentActivity] = await pool.query(`
+            SELECT
+                h.start_time AS backupDate,
+                i.instance_name AS instanceName,
+                UPPER(h.result_status) AS status,
+                h.remark
+
+            FROM backup_history h
+            JOIN instances i
+            ON h.instance_id=i.instance_id
+            ORDER BY h.start_time DESC
+            LIMIT 15
+        `);
+
+        res.json({
+            summary: {
+                totalInstances: instanceCount.totalInstances,
+                totalBackups: backupSummary.totalBackups || 0,
+                successfulBackups: backupSummary.successfulBackups || 0,
+                failedBackups: backupSummary.failedBackups || 0,
+                successRate,
+                averageBackupSize: averageSize
+            },
+            instanceSummary,
+            recentActivity
+        });
+    }
+    catch (err) {
+        console.error("Reports Error:", err);
+        res.status(500).json({
+            error: "Failed to generate reports."
+        });
+    }
+});
+
+router.get("/export", async (req, res) => {
+    try {
+        const [rows] = await pool.query(`
+            SELECT
+                h.history_id,
+                i.instance_name,
+                h.backup_type,
+                h.backup_location,
+                h.backup_path,
+                h.start_time,
+                h.end_time,
+                h.duration,
+                h.file_size,
+                h.result_status,
+                h.remark
+
+            FROM backup_history h
+            JOIN instances i
+            ON h.instance_id = i.instance_id
+            ORDER BY h.start_time DESC
+        `);
+        let csv = "History ID,Instance Name,Backup Type,Backup Location,Backup Path,Start Time,End Time,Duration,File Size,Status,Remark\n";
+        rows.forEach(r => {
+
+            csv += `"${r.history_id}",`;
+            csv += `"${r.instance_name}",`;
+            csv += `"${r.backup_type}",`;
+            csv += `"${r.backup_location}",`;
+            csv += `"${r.backup_path}",`;
+            csv += `"${r.start_time}",`;
+            csv += `"${r.end_time}",`;
+            csv += `"${r.duration}",`;
+            csv += `"${r.file_size}",`;
+            csv += `"${r.result_status}",`;
+            csv += `"${(r.remark || "").replace(/"/g,'""')}"\n`;
+
+        });
+        res.setHeader(
+            "Content-Disposition",
+            "attachment; filename=backup-history.csv"
+        );
+        res.setHeader(
+            "Content-Type",
+            "text/csv"
+        );
+        res.send(csv);
+    } catch (err) {
+        console.error(err);
+        res.status(500).send("Failed to export CSV.");
+    }
+});
 
 module.exports = router;
