@@ -7,6 +7,7 @@ const session = require('express-session');
 const authRoutes = require('./routes/auth');
 const instanceRoutes = require('./routes/instances');
 const backupRoutes = require('./routes/backup');
+const filesystemRoutes = require('./routes/filesystem');
 const { requireAuth } = require('./middleware/auth');
 
 const app = express();
@@ -27,6 +28,7 @@ app.use(session({
 app.use('/api', authRoutes);
 app.use('/api/instances', requireAuth, instanceRoutes);
 app.use('/api/backup', requireAuth, backupRoutes);
+app.use('/api/filesystem', requireAuth, filesystemRoutes);
 
 const frontendPath = path.join(__dirname, '..', 'frontend');
 app.use(express.static(frontendPath));
@@ -42,3 +44,4 @@ app.use((err, req, res, next) => {
 app.listen(PORT, () => {
     console.log(`Backup Monitoring System running at http://localhost:${PORT}`);
 });
+

@@ -16,20 +16,27 @@ function checkTcpConnection(ip, port, timeoutMs = 3000) {
             resolve(result);
         };
 
+        const DEBUG = false;
         socket.setTimeout(timeoutMs);
 
         socket.once('connect', () => {
-            console.log(`[TCP] Connected to ${ip}:${port}`);
+            if (DEBUG) {
+                console.log(`[TCP] Connected to ${ip}:${port}`);
+            }
             finish(true);
         });
 
         socket.once('timeout', () => {
-            console.log(`[TCP] Timeout while connecting to ${ip}:${port}`);
+            if (DEBUG) {
+                console.log(`[TCP] Timeout while connecting to ${ip}:${port}`);
+            }
             finish(false);
         });
 
         socket.once('error', (err) => {
-            console.log(`[TCP] Error for ${ip}:${port} -> ${err.message}`);
+            if (DEBUG) {
+                console.log(`[TCP] Error for ${ip}:${port} -> ${err.message}`);
+            }
             finish(false);
         });
 
@@ -83,7 +90,6 @@ router.get('/refresh-status', async (req, res) => {
 
 router.get('/check-connection', async (req, res) => {
     const { ip, port } = req.query;
-
     console.log('\n====== CHECK CONNECTION ======');
     console.log('IP:', ip);
     console.log('PORT:', port);

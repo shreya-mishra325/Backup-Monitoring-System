@@ -53,107 +53,181 @@ function makeFilename(instanceName, dbType) {
     return `backup_${safe}_${ts}.${ext}`;
 }
 
-function runBackup(instance, backupDir) {
-    return new Promise((resolve, reject) => {
-        const filename  = makeFilename(instance.instance_name, instance.database_type);
-        const filePath  = path.join(backupDir, filename);
-        const startTime = Date.now();
+async function getUserDatabases(instance) {
+    const mysql = require("mysql2/promise");
+    const conn = await mysql.createConnection({
+        host: instance.instance_ip,
+        port: instance.port_number,
+        user: instance.db_username || "root",
+        password: instance.db_password || ""
+    });
 
-        const type = (instance.database_type || '').toLowerCase();
-        const ip   = instance.instance_ip;
-        const port = instance.port_number;
-        const user = instance.db_username || 'root';
-        const pass = instance.db_password || '';
+    const [rows] = await conn.query("SHOW DATABASES");
+    await conn.end();
 
-        let cmd, args, env;
+    const systemSchemas = [
+        "information_schema",
+        "mysql",
+        "performance_schema",
+        "sys"
+    ];
 
-        if (type.includes('mysql')) {
-            cmd = 'C:\\Program Files\\MySQL\\MySQL Server 8.0\\bin\\mysqldump.exe';
-            args = [
-                `-h${ip}`,
-                `-P${port}`,
-                `-u${user}`,
-                `--all-databases`,
-                `--single-transaction`,
-                `--routines`,
-                `--triggers`,
-                `--result-file=${filePath}`,
-            ];
-            env = { ...process.env, MYSQL_PWD: pass };
+    return rows
+        .map(r => r.Database)
+        .filter(db => !systemSchemas.includes(db));
+}
 
-        } else if (type.includes('oracle')) {
-            cmd  = 'exp';
-            args = [
-                `${user}/${pass}@${ip}:${port}/ORCL`,
-                `FILE=${filePath}`,
-                `FULL=Y`,
-                `LOG=${filePath}.log`,
-            ];
-            env = { ...process.env };
+async function runBackup(instance, backupDir) {
 
-        } else if (type.includes('postgresql') || type.includes('postgres')) {
-            cmd  = 'pg_dump';
-            args = [
-                `-h`, ip,
-                `-p`, String(port),
-                `-U`, user,
-                `-F`, 'c',          
-                `-f`, filePath,
-                `--no-password`,
-            ];
-            env = { ...process.env, PGPASSWORD: pass };
+    const filename = makeFilename(instance.instance_name, instance.database_type);
+    const filePath = path.join(backupDir, filename);
+    const startTime = Date.now();
 
-        } else {
-            cmd  = 'mysqldump';
-            args = [
-                `-h${ip}`, `-P${port}`, `-u${user}`,
-                `--all-databases`, `--single-transaction`,
-                `--result-file=${filePath}`,
-            ];
-            env = { ...process.env, MYSQL_PWD: pass };
+    const type = (instance.database_type || '').toLowerCase();
+    const ip = instance.instance_ip;
+    const port = instance.port_number;
+    const user = instance.db_username || 'root';
+    const pass = instance.db_password || '';
+
+    let cmd, args, env;
+
+    if (type.includes('mysql')) {
+
+        cmd = 'C:\\Program Files\\MySQL\\MySQL Server 8.0\\bin\\mysqldump.exe';
+
+        const databases = await getUserDatabases(instance);
+
+        if (databases.length === 0) {
+            throw new Error("No user databases found.");
         }
 
-        console.log(`[Backup] Running: ${cmd} ${args.filter(a => !a.includes(pass)).join(' ')}`);
+        args = [
+            `-h${ip}`,
+            `-P${port}`,
+            `-u${user}`,
+            "--databases",
+            ...databases,
+            "--single-transaction",
+            "--routines",
+            "--triggers",
+            `--result-file=${filePath}`
+        ];
 
-        const proc = spawn(cmd, args, { env, shell: false });
+        env = {
+            ...process.env,
+            MYSQL_PWD: pass
+        };
 
-        let stderr = '';
-        proc.stderr.on('data', (chunk) => { stderr += chunk.toString(); });
+    }
+    else if (type.includes('oracle')) {
 
-        proc.on('close', (code) => {
+        cmd = 'exp';
+
+        args = [
+            `${user}/${pass}@${ip}:${port}/ORCL`,
+            `FILE=${filePath}`,
+            `FULL=Y`,
+            `LOG=${filePath}.log`
+        ];
+
+        env = { ...process.env };
+
+    }
+    else if (type.includes('postgres')) {
+
+        cmd = 'pg_dump';
+
+        args = [
+            "-h", ip,
+            "-p", String(port),
+            "-U", user,
+            "-F", "c",
+            "-f", filePath,
+            "--no-password"
+        ];
+
+        env = {
+            ...process.env,
+            PGPASSWORD: pass
+        };
+
+    }
+    else {
+
+        throw new Error("Unsupported database type.");
+
+    }
+
+    console.log(
+        `[Backup] Running: ${cmd} ${args.filter(a => !String(a).includes(pass)).join(" ")}`
+    );
+
+    return new Promise((resolve, reject) => {
+
+        const proc = spawn(cmd, args, {
+            env,
+            shell: false
+        });
+
+        let stderr = "";
+
+        proc.stderr.on("data", chunk => {
+            stderr += chunk.toString();
+        });
+
+        proc.on("error", err => {
+
+            if (err.code === "ENOENT") {
+
+                return reject(new Error(
+                    `'${cmd}' not found. Make sure it is installed and on your PATH.`
+                ));
+
+            }
+
+            reject(err);
+
+        });
+
+        proc.on("close", code => {
+
             const duration = formatDuration(Date.now() - startTime);
 
             if (code !== 0) {
-                try { if (fs.existsSync(filePath)) fs.unlinkSync(filePath); } catch (_) {}
-                return reject(new Error(`${cmd} exited with code ${code}. ${stderr.trim()}`));
+
+                try {
+                    if (fs.existsSync(filePath))
+                        fs.unlinkSync(filePath);
+                } catch (_) {}
+
+                return reject(
+                    new Error(`${cmd} exited with code ${code}. ${stderr.trim()}`)
+                );
+
             }
 
-            let fileSize = '0 B';
+            let fileSize = "0 B";
+
             try {
-                const stats = fs.statSync(filePath);
-                fileSize = formatFileSize(stats.size);
+
+                fileSize = formatFileSize(fs.statSync(filePath).size);
+
             } catch (_) {}
 
             resolve({
+
                 filePath,
+                fileName: filename,
                 fileSize,
                 duration,
-                remark: `Backup completed successfully. File: ${filename}`,
+                remark: `Backup completed successfully. File: ${filename}`
+
             });
+
         });
 
-        proc.on('error', (err) => {
-            if (err.code === 'ENOENT') {
-                return reject(new Error(
-                    `'${cmd}' not found. Make sure it is installed and on your system PATH.\n` +
-                    `  MySQL  -> install MySQL client tools (includes mysqldump)\n` +
-                    `  Oracle -> install Oracle Instant Client\n` +
-                    `  PostgreSQL -> install PostgreSQL client`
-                ));
-            }
-            reject(err);
-        });
     });
+
 }
 
 router.post('/now', async (req, res) => {
@@ -170,13 +244,14 @@ router.post('/now', async (req, res) => {
     const instance = rows[0];
 
     const startTime = new Date();
-    let filePath, fileSize, duration, remark, resultStatus;
+    let filePath, fileName, fileSize, duration, remark, resultStatus;
 
     try {
         const dir = ensureBackupDir(backupPath);
         const result = await runBackup(instance, dir);
 
         filePath     = result.filePath;
+        fileName     = result.fileName;
         fileSize     = result.fileSize;
         duration     = result.duration;
         remark       = result.remark;
@@ -195,11 +270,11 @@ router.post('/now', async (req, res) => {
     await pool.query(
         `INSERT INTO backup_history
             (instance_id, backup_location, backup_path, backup_type,
-            start_time, end_time, duration, file_size, result_status, remark)
-         VALUES (?, ?, ?, 'Manual', ?, ?, ?, ?, ?, ?)`,
+            start_time, end_time, duration, file_size, file_name, result_status, remark)
+         VALUES (?, ?, ?, 'Manual', ?, ?, ?, ?, ?, ?, ?)`,
         [id, backupLocation || 'Local Drive', backupPath,
          toMysqlDatetime(startTime), toMysqlDatetime(endTime),
-         duration, fileSize, resultStatus, remark]
+         duration, fileSize, fileName || null, resultStatus, remark]
     );
 
     await pool.query(
@@ -237,20 +312,33 @@ router.post('/schedule', async (req, res) => {
         });
     }
 
+    if (parsedDate.getTime() <= Date.now()) {
+        return res.json({ success: false, message: 'Please choose a future date and time.' });
+    }
+
     const conn = await pool.getConnection();
     try {
-        await conn.beginTransaction();
-        await conn.query(
-            `UPDATE backup_schedules SET status = 'Cancelled'
-              WHERE instance_id = ? AND status = 'Scheduled'`,
-            [id]
+        const mysqlDateTime = toMysqlDatetime(parsedDate);
+
+        const [conflicts] = await conn.query(
+            `SELECT schedule_id FROM backup_schedules
+              WHERE status = 'Scheduled' AND backup_datetime = ?`,
+            [mysqlDateTime]
         );
+        if (conflicts.length > 0) {
+            return res.json({
+                success: false,
+                message: 'Another backup is already scheduled for that exact date & time. Please choose a different time.'
+            });
+        }
+
+        await conn.beginTransaction();
 
         const [result] = await conn.query(
             `INSERT INTO backup_schedules
                 (instance_id, backup_location, backup_path, backup_datetime, status)
              VALUES (?, ?, ?, ?, 'Scheduled')`,
-            [id, backupLocation, backupPath, toMysqlDatetime(parsedDate)]
+            [id, backupLocation, backupPath, mysqlDateTime]
         );
         await conn.commit();
 
@@ -262,7 +350,7 @@ router.post('/schedule', async (req, res) => {
             runAt:          parsedDate,
         });
 
-        res.json({ success: true, message: `Backup scheduled for ${backupDateTime}` });
+        res.json({ success: true, message: `Backup scheduled for ${backupDateTime}`, scheduleId: result.insertId });
 
     } catch (err) {
         await conn.rollback();
@@ -270,6 +358,119 @@ router.post('/schedule', async (req, res) => {
         res.json({ success: false, message: 'Failed to schedule backup.' });
     } finally {
         conn.release();
+    }
+});
+
+router.put('/schedule/:id', async (req, res) => {
+    const scheduleId = parseInt(req.params.id, 10);
+    const { backupLocation, backupPath, backupDateTime } = req.body;
+
+    if (!scheduleId || !backupLocation || !backupPath || !backupDateTime) {
+        return res.json({ success: false, message: 'All fields are required.' });
+    }
+
+    const parsedDate = parseBackupDateTime(backupDateTime);
+    if (!parsedDate) {
+        return res.json({
+            success: false,
+            message: 'Invalid date/time. Use format: dd.mm.yyyy hh:mm AM/PM'
+        });
+    }
+
+    if (parsedDate.getTime() <= Date.now()) {
+        return res.json({ success: false, message: 'Please choose a future date and time.' });
+    }
+
+    try {
+        const [rows] = await pool.query(
+            `SELECT * FROM backup_schedules WHERE schedule_id = ?`,
+            [scheduleId]
+        );
+        if (rows.length === 0) {
+            return res.status(404).json({ success: false, message: 'Scheduled backup not found.' });
+        }
+        const schedule = rows[0];
+        if (schedule.status !== 'Scheduled') {
+            return res.json({ success: false, message: 'Only pending scheduled backups can be edited.' });
+        }
+
+        const mysqlDateTime = toMysqlDatetime(parsedDate);
+
+        const [conflicts] = await pool.query(
+            `SELECT schedule_id FROM backup_schedules
+              WHERE status = 'Scheduled' AND backup_datetime = ? AND schedule_id != ?`,
+            [mysqlDateTime, scheduleId]
+        );
+        if (conflicts.length > 0) {
+            return res.json({
+                success: false,
+                message: 'Another backup is already scheduled for that exact date & time. Please choose a different time.'
+            });
+        }
+
+        await pool.query(
+            `UPDATE backup_schedules
+                SET backup_location = ?, backup_path = ?, backup_datetime = ?
+              WHERE schedule_id = ?`,
+            [backupLocation, backupPath, mysqlDateTime, scheduleId]
+        );
+
+        const existingJob = scheduledJobs.get(scheduleId);
+        if (existingJob) {
+            clearTimeout(existingJob);
+            scheduledJobs.delete(scheduleId);
+        }
+
+        scheduleBackupJob({
+            scheduleId,
+            instanceId: schedule.instance_id,
+            backupLocation,
+            backupPath,
+            runAt: parsedDate,
+        });
+
+        res.json({ success: true, message: 'Scheduled backup updated successfully.' });
+
+    } catch (err) {
+        console.error('Reschedule error:', err);
+        res.status(500).json({ success: false, message: 'Failed to update scheduled backup.' });
+    }
+});
+
+router.delete('/schedule/:id', async (req, res) => {
+    const scheduleId = parseInt(req.params.id, 10);
+    if (!scheduleId) {
+        return res.status(400).json({ success: false, message: 'Invalid schedule id.' });
+    }
+
+    try {
+        const [rows] = await pool.query(
+            `SELECT status FROM backup_schedules WHERE schedule_id = ?`,
+            [scheduleId]
+        );
+        if (rows.length === 0) {
+            return res.status(404).json({ success: false, message: 'Scheduled backup not found.' });
+        }
+        if (rows[0].status !== 'Scheduled') {
+            return res.json({ success: false, message: 'Only pending scheduled backups can be cancelled.' });
+        }
+
+        const existingJob = scheduledJobs.get(scheduleId);
+        if (existingJob) {
+            clearTimeout(existingJob);
+            scheduledJobs.delete(scheduleId);
+        }
+
+        await pool.query(
+            `UPDATE backup_schedules SET status = 'Cancelled' WHERE schedule_id = ?`,
+            [scheduleId]
+        );
+
+        res.json({ success: true, message: 'Scheduled backup cancelled.' });
+
+    } catch (err) {
+        console.error('Cancel schedule error:', err);
+        res.status(500).json({ success: false, message: 'Failed to cancel scheduled backup.' });
     }
 });
 
@@ -292,11 +493,12 @@ function scheduleBackupJob({ scheduleId, instanceId, backupLocation, backupPath,
 
         const instance  = rows[0];
         const startTime = new Date();
-        let fileSize, duration, remark, resultStatus;
+        let fileName, fileSize, duration, remark, resultStatus;
 
         try {
             const dir    = ensureBackupDir(backupPath);
             const result = await runBackup(instance, dir);
+            fileName     = result.fileName;
             fileSize     = result.fileSize;
             duration     = result.duration;
             remark       = result.remark;
@@ -314,11 +516,11 @@ function scheduleBackupJob({ scheduleId, instanceId, backupLocation, backupPath,
         await pool.query(
             `INSERT INTO backup_history
                 (instance_id, backup_location, backup_path, backup_type,
-                 start_time, end_time, duration, file_size, result_status, remark)
-             VALUES (?, ?, ?, 'Scheduled', ?, ?, ?, ?, ?, ?)`,
+                 start_time, end_time, duration, file_size, file_name, result_status, remark)
+             VALUES (?, ?, ?, 'Scheduled', ?, ?, ?, ?, ?, ?, ?)`,
             [instanceId, backupLocation, backupPath,
              toMysqlDatetime(startTime), toMysqlDatetime(endTime),
-             duration, fileSize, resultStatus, remark]
+             duration, fileSize, fileName || null, resultStatus, remark]
         );
 
         await pool.query(
@@ -422,16 +624,18 @@ router.get('/reports', async (req, res) => {
 
         const [recentActivity] = await pool.query(`
             SELECT
+                h.history_id AS historyId,
                 h.start_time AS backupDate,
                 i.instance_name AS instanceName,
                 UPPER(h.result_status) AS status,
-                h.remark
+                h.remark,
+                h.file_name AS fileName
 
             FROM backup_history h
             JOIN instances i
             ON h.instance_id=i.instance_id
             ORDER BY h.start_time DESC
-            LIMIT 15
+            LIMIT 10
         `);
 
         res.json({
@@ -504,6 +708,64 @@ router.get("/export", async (req, res) => {
     } catch (err) {
         console.error(err);
         res.status(500).send("Failed to export CSV.");
+    }
+});
+
+router.get('/download/:historyId', async (req, res) => {
+    const id = parseInt(req.params.historyId, 10);
+    if (!id) {
+        return res.status(400).json({ error: 'Invalid backup id.' });
+    }
+
+    try {
+        const [rows] = await pool.query(
+            `SELECT backup_path, file_name, result_status FROM backup_history WHERE history_id = ?`,
+            [id]
+        );
+
+        if (rows.length === 0) {
+            return res.status(404).json({ error: 'Backup record not found.' });
+        }
+
+        const record = rows[0];
+
+        if (record.result_status !== 'Success' || !record.file_name) {
+            return res.status(400).json({ error: 'No downloadable file for this backup.' });
+        }
+
+        const filePath = path.join(path.resolve(record.backup_path), record.file_name);
+
+        if (!fs.existsSync(filePath)) {
+            return res.status(404).json({ error: 'Backup file no longer exists on the server.' });
+        }
+
+        res.download(filePath, record.file_name);
+
+    } catch (err) {
+        console.error('Download error:', err);
+        res.status(500).json({ error: 'Failed to download backup file.' });
+    }
+});
+
+router.get('/schedules', async (req, res) => {
+    try {
+        const [rows] = await pool.query(`
+            SELECT
+                s.schedule_id      AS scheduleId,
+                i.instance_name    AS instanceName,
+                s.backup_location  AS backupLocation,
+                s.backup_path      AS backupPath,
+                s.backup_datetime  AS backupDatetime,
+                s.status           AS status,
+                s.created_at       AS createdAt
+            FROM backup_schedules s
+            JOIN instances i ON s.instance_id = i.instance_id
+            ORDER BY s.created_at DESC
+        `);
+        res.json(rows);
+    } catch (err) {
+        console.error('Error fetching scheduled backup history:', err);
+        res.status(500).json({ error: 'Failed to fetch scheduled backup history.' });
     }
 });
 

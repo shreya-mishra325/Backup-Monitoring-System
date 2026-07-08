@@ -1,5 +1,4 @@
-// db/pool.js
-// This creates and exports a MySQL connection pool using mysql2/promise. Coolll
+// This creates and exports a MySQL connection pool using mysql2/promise. Coolll stuff
 
 require('dotenv').config();
 const mysql = require('mysql2/promise');
@@ -9,7 +8,7 @@ const pool = mysql.createPool({
     port: process.env.DB_PORT || 3306,
     user: process.env.DB_USER || 'root',
     password: process.env.DB_PASSWORD || 'root',
-    database: process.env.DB_NAME || 'backup_monitor_db',
+    database: process.env.DB_NAME || 'backup_db',
     waitForConnections: true,
     connectionLimit: 10,
     queueLimit: 0
