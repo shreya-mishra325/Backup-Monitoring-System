@@ -1,14 +1,10 @@
 # 🗄️ Backup Monitoring System (BMS)
 
-<div align="center">
-
-**A centralized web-based platform for monitoring, scheduling, and managing backups of remote database servers running across different IP addresses within an organization's network.**
+**A centralized platform for monitoring, scheduling, and managing backups of remote database servers running across multiple IP addresses within an organization's network.**
 
 ![Node.js](https://img.shields.io/badge/Node.js-18%2B-339933?logo=node.js&logoColor=white)
 ![Express.js](https://img.shields.io/badge/Express.js-REST%20API-000000?logo=express&logoColor=white)
 ![MySQL](https://img.shields.io/badge/MySQL-8.0-4479A1?logo=mysql&logoColor=white)
-
-</div>
 
 ---
 
@@ -131,7 +127,7 @@ Backup-Monitoring-System/
 │   └── schema.sql
 │
 ├── docs/
-│   ├── REMOTE_MYSQL_SETUP.md
+│   ├── remoteip_setup.md
 │   └── screenshots/
 │
 ├── .gitignore
@@ -145,49 +141,64 @@ Backup-Monitoring-System/
 ```mermaid
 flowchart TD
 
-    A[Administrator Login] --> B[Dashboard]
+A[Administrator Login] --> B[Dashboard]
 
-    B --> C[Register Database Instance]
-    C --> D[Enter Server IP Address & Port]
-    D --> E[TCP Socket Connection Test]
+B --> C[Register Database Instance]
 
-    E -->|Reachable| F[Save Database Instance]
-    E -->|Connection Failed| D
+C --> D[Enter Server IP & Port]
 
-    B --> G[Configure Backup]
-    G --> H[Browse Backup Folder]
+D --> E[TCP Socket Connection Test]
 
-    B --> I[Backup Now]
-    B --> J[Schedule Backup]
+E -->|Reachable| F[Save Instance]
 
-    I --> K[Backup Engine]
-    J --> K
+E -->|Failed| D
 
-    K --> L{Database Type}
+B --> G[Configure Backup]
 
-    L --> M[MySQL<br/>mysqldump]
-    L --> N[Oracle<br/>exp]
-    L --> O[PostgreSQL<br/>pg_dump]
+G --> H[Browse Backup Folder]
 
-    M --> P[(Remote Database Servers)]
-    N --> P
-    O --> P
+B --> I[Backup Now]
 
-    P --> Q[(Backup Files)]
+B --> J[Schedule Backup]
 
-    Q --> R[(backup_history)]
+I --> K[Backup Engine]
 
-    R --> S[Reports]
-    R --> T[Backup History]
-    R --> U[Scheduled Backups]
+J --> K
 
-    U --> V[Edit / Cancel Schedule]
+K --> L{Database Type}
 
-    J -.-> W[setTimeout()]
-    W -.-> X[reloadScheduledJobs()<br/>on Server Restart]
-    X -.-> J
+L --> M[MySQL]
+
+L --> N[Oracle]
+
+L --> O[PostgreSQL]
+
+M --> P[mysqldump]
+
+N --> Q[exp]
+
+O --> R[pg_dump]
+
+P --> S[(Remote Database Servers)]
+
+Q --> S
+
+R --> S
+
+S --> T[(Backup Files)]
+
+T --> U[(backup_history)]
+
+U --> V[Reports]
+
+U --> W[Backup History]
+
+U --> X[Scheduled Backups]
+
+X -.-> Y[Reload Pending Jobs on Restart]
+
+Y -.-> J
 ```
-
 ---
 
 # Getting Started
@@ -339,9 +350,8 @@ This approach keeps scheduling lightweight while ensuring scheduled backups are 
 ---
 
 <div align="center">
-
-Developed during my Software Development Internship at **East Coast Railway**
+    
+🚆 Developed during my Software Development Internship at **East Coast Railway**
 
 **Backup Monitoring System • Version 1.0**
-
 </div>
