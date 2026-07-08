@@ -1,119 +1,204 @@
-# Backup Monitoring System
+# 🗄️ Backup Monitoring System (BMS)
 
-A web-based application to monitor database server instances (running on different IP addresses across the company) and manage their backups — view status, validate connectivity, schedule backups, and trigger immediate backups.
+<div align="center">
 
-**Tech Stack**
+**A centralized web-based platform for monitoring, scheduling, and managing backups of remote database servers running across different IP addresses within an organization's network.**
 
-* Frontend: HTML, CSS, JavaScript (vanilla, no framework, `fetch`-based AJAX)
-* Backend: Node.js + Express.js (REST JSON API)
-* Database: MySQL 8.0 (via `mysql2`)
-* Auth: express-session + bcrypt password hashing
+![Node.js](https://img.shields.io/badge/Node.js-18%2B-339933?logo=node.js&logoColor=white)
+![Express.js](https://img.shields.io/badge/Express.js-REST%20API-000000?logo=express&logoColor=white)
+![MySQL](https://img.shields.io/badge/MySQL-8.0-4479A1?logo=mysql&logoColor=white)
+
+</div>
 
 ---
 
-## 1. Folder Structure
+# Overview
+
+Backup Monitoring System (BMS) is a full-stack web application developed during my internship at **East Coast Railway** to centralize the monitoring and backup management of database servers running across different IP addresses within an organization's network.
+
+The application enables administrators to register remote database instances using their IP address and port number, verify server reachability through a TCP socket connection, schedule backups, execute immediate backups, browse backup storage locations, and monitor backup history from a single dashboard.
+
+Before an instance is registered, the system performs a TCP connection test by attempting to establish a socket connection with the target server. A successful TCP socket connection confirms that the target server is reachable over the network before it is registered for backup operations.
+
+The backend executes native database backup utilities (`mysqldump`, `exp`, and `pg_dump`) against the configured remote servers while maintaining complete backup history, scheduling information, execution logs, and reporting data within MySQL.
+
+---
+
+## Features
+
+- Centralized monitoring of database servers running across different IP addresses
+- Support for MySQL, Oracle, and PostgreSQL database instances
+- Register remote servers using IP address and port number
+- TCP socket-based connectivity verification before registering an instance
+- Manual and scheduled database backups
+- Automatic backup execution using native database utilities
+- Browse system folders to choose backup storage locations
+- Real-time backup progress with toast notifications
+- Backup history with downloadable backup files
+- Reports dashboard with charts and analytics
+- CSV export of backup reports
+- Secure session-based authentication using bcrypt and express-session
+- Automatic TCP connectivity refresh every 10 seconds
+- Automatic restoration of pending scheduled backups after server restart using `reloadScheduledJobs()`
+
+---
+
+# Screenshots
+
+| Login | Dashboard |
+|---|---|
+| ![](docs/screenshots/login.png) | ![](docs/screenshots/dashboard.png) |
+
+| Add New Instance | Check Connection |
+|---|---|
+| ![](docs/screenshots/add-instance.png) | ![](docs/screenshots/check-connection.png) |
+
+| Configure Backup | Browse Folder |
+|---|---|
+| ![](docs/screenshots/configure-backup.png) | ![](docs/screenshots/browse-folder.png) |
+
+| Backup Progress & Notifications | Backup History |
+|---|---|
+| ![](docs/screenshots/progress-toast.png) | ![](docs/screenshots/backup-history.png) |
+
+| Reports | Scheduled Backups |
+|---|---|
+| ![](docs/screenshots/reports.png) | ![](docs/screenshots/scheduled-backups.png) |
+
+| Edit Scheduled Backup | Settings |
+|---|---|
+| ![](docs/screenshots/edit-schedule.png) | ![](docs/screenshots/settings.png) |
+
+---
+
+# Tech Stack
+
+| Layer | Technology |
+|---|---|
+| Frontend | HTML, CSS, Vanilla JavaScript |
+| Backend | Node.js, Express.js |
+| Database | MySQL 8.0 (`mysql2/promise`) |
+| Authentication | express-session + bcrypt |
+| Backup Engine | mysqldump, Oracle exp, PostgreSQL pg_dump |
+| Charts | Chart.js |
+| Networking | Node.js `net` module (TCP socket connectivity) |
+| File System | Node.js `fs` module |
+| Child Processes | Node.js `child_process.spawn` |
+
+---
+
+# Folder Structure
 
 ```text
-BackupMonitoringSystem/
-│
-├── sql/
-│   └── schema.sql                  -- DB schema + seed data
+Backup-Monitoring-System/
 │
 ├── backend/
-│   ├── server.js                   -- Express app entry point
-│   ├── package.json
-│   ├── .env.example                -- copy to .env and edit
-│   │
 │   ├── db/
-│   │   └── pool.js                 -- MySQL connection pool
-│   │
+│   │   └── pool.js
 │   ├── middleware/
-│   │   └── auth.js                 -- requireAuth session guard
-│   │
+│   │   └── auth.js
 │   ├── routes/
-│   │   ├── auth.js                 -- /api/session, /api/login, /api/logout
-│   │   ├── instances.js            -- /api/instances/*
-│   │   └── backup.js               -- /api/backup/*
-│   │
-│   └── scripts/
-│       ├── hashPassword.js         -- generate bcrypt hashes
-│       └── seedAdmin.js            -- create/update default admin user
+│   │   ├── auth.js
+│   │   ├── backup.js
+│   │   ├── filesystem.js
+│   │   └── instances.js
+│   ├── scripts/
+│   │   ├── hashPassword.js
+│   │   └── seedAdmin.js
+│   ├── .env.example
+│   ├── package.json
+│   └── server.js
 │
-└── frontend/
-    ├── css/
-    │   └── style.css
-    ├── js/
-    │   ├── app.js                  -- shared layout/session validation
-    │   ├── login.js
-    │   ├── home.js
-    │   ├── addInstance.js
-    │   ├── backupHistory.js
-    │   └── reports.js
-    │
-    ├── login.html                  -- Login page
-    ├── home.html                   -- Dashboard
-    ├── addInstance.html            -- Add New Instance
-    ├── backupHistory.html          -- Backup History
-    └── reports.html                -- Reports
+├── frontend/
+│   ├── css/
+│   ├── images/
+│   ├── js/
+│   │   ├── app.js
+│   │   ├── login.js
+│   │   ├── home.js
+│   │   ├── addInstance.js
+│   │   ├── reports.js
+│   │   └── settings.js
+│   ├── login.html
+│   ├── home.html
+│   ├── addInstance.html
+│   ├── reports.html
+│   ├── backupHistory.html
+│   ├── scheduledBackups.html
+│   └── settings.html
+│
+├── sql/
+│   └── schema.sql
+│
+├── docs/
+│   ├── REMOTE_MYSQL_SETUP.md
+│   └── screenshots/
+│
+├── .gitignore
+└── README.md
 ```
 
 ---
 
-## 2. High Level System Flow
+# High-Level System Flow
 
 ```mermaid
 flowchart TD
 
-    User[Administrator]
+    A[Administrator Login] --> B[Dashboard]
 
-    User --> Login[Login Page]
-    Login --> Dashboard[Dashboard]
+    B --> C[Register Database Instance]
+    C --> D[Enter Server IP Address & Port]
+    D --> E[TCP Socket Connection Test]
 
-    Dashboard --> AddInstance[Add New Instance]
-    Dashboard --> BackupHistory[Backup History]
+    E -->|Reachable| F[Save Database Instance]
+    E -->|Connection Failed| D
 
-    AddInstance --> ConnectionCheck[TCP Connection Check]
+    B --> G[Configure Backup]
+    G --> H[Browse Backup Folder]
 
-    ConnectionCheck -->|Connected| SaveInstance[Save Instance]
-    ConnectionCheck -->|Failed| Retry[Retry Configuration]
+    B --> I[Backup Now]
+    B --> J[Schedule Backup]
 
-    SaveInstance --> MonitoredServers[Remote Database Servers]
+    I --> K[Backup Engine]
+    J --> K
 
-    Dashboard --> ScheduleBackup[Schedule Backup]
-    Dashboard --> BackupNow[Backup Now]
+    K --> L{Database Type}
 
-    ScheduleBackup --> BackupEngine[Backup Engine]
-    BackupNow --> BackupEngine
+    L --> M[MySQL<br/>mysqldump]
+    L --> N[Oracle<br/>exp]
+    L --> O[PostgreSQL<br/>pg_dump]
 
-    BackupEngine --> RemoteServers[(Remote DB Servers)]
-    RemoteServers --> BackupStorage[(Backup Storage)]
+    M --> P[(Remote Database Servers)]
+    N --> P
+    O --> P
 
-    BackupEngine --> History[(Backup History)]
-    History --> BackupHistory
+    P --> Q[(Backup Files)]
+
+    Q --> R[(backup_history)]
+
+    R --> S[Reports]
+    R --> T[Backup History]
+    R --> U[Scheduled Backups]
+
+    U --> V[Edit / Cancel Schedule]
+
+    J -.-> W[setTimeout()]
+    W -.-> X[reloadScheduledJobs()<br/>on Server Restart]
+    X -.-> J
 ```
 
 ---
 
-## 3. Database Setup
+# Getting Started
 
-1. Start MySQL and run the schema script:
+## 1. Database Setup
 
-   ```bash
-   mysql -u root -p < sql/schema.sql
-   ```
+```bash
+mysql -u root -p < sql/schema.sql
+```
 
-   This creates the database `backup_monitor_db` with tables:
-
-   * `users` — application login credentials
-   * `instances` — monitored database servers
-   * `backup_schedules` — scheduled backup jobs
-   * `backup_history` — log of backup executions
-
-2. Create the default admin user using the script described below.
-
----
-
-## 4. Backend Setup
+## 2. Backend Setup
 
 ```bash
 cd backend
@@ -121,55 +206,35 @@ npm install
 cp .env.example .env
 ```
 
-Edit `.env` with your MySQL credentials:
+Configure `.env`:
 
 ```env
+PORT=3000
 DB_HOST=localhost
 DB_PORT=3306
 DB_USER=root
-DB_PASSWORD=<your_mysql_password>
-DB_NAME=backup_monitor_db
-
-SESSION_SECRET=some-long-random-string
-
-PORT=3000
+DB_PASSWORD=your_password
+DB_NAME=backup_db
+SESSION_SECRET=your_secret_key
 ```
 
----
-
-## 5. Create the Default Admin User
+## 3. Create Default Administrator
 
 ```bash
-cd backend
 node scripts/seedAdmin.js
 ```
 
-This creates:
+Default credentials:
 
 ```text
-Username: admin
-Password: admin123
+Username : admin
+Password : admin123
 ```
 
-Or create your own:
+## 4. Run the Application
 
 ```bash
-node scripts/seedAdmin.js myuser mypassword
-```
-
----
-
-## 6. Run the Application
-
-```bash
-cd backend
 npm start
-```
-
-For development:
-
-```bash
-npm run dev
 ```
 
 Open:
@@ -178,89 +243,105 @@ Open:
 http://localhost:3000
 ```
 
-Login using:
+---
 
-```text
-admin / admin123
-```
+# Application Pages
+
+| Page | Description |
+|---|---|
+| Login | Administrator authentication |
+| Dashboard | Monitor instances and initiate backups |
+| Add New Instance | Register database servers and validate connectivity |
+| Reports | Backup analytics and charts |
+| Backup History | View and download completed backups |
+| Scheduled Backups | Create, edit and manage backup schedules |
+| Settings | Password and application preferences |
 
 ---
 
-## 7. API Reference
+# API Overview
 
-| Method | Endpoint                                    | Auth | Description                 |
-| ------ | ------------------------------------------- | ---- | --------------------------- |
-| GET    | `/api/session`                              | No   | Check login status          |
-| POST   | `/api/login`                                | No   | User login                  |
-| GET    | `/api/logout`                               | No   | Logout user                 |
-| GET    | `/api/instances`                            | Yes  | List all instances          |
-| GET    | `/api/instances/:id`                        | Yes  | Fetch instance details      |
-| GET    | `/api/instances/check-connection?ip=&port=` | Yes  | TCP connectivity validation |
-| POST   | `/api/instances`                            | Yes  | Add new instance            |
-| POST   | `/api/backup/schedule`                      | Yes  | Schedule backup             |
-| POST   | `/api/backup/now`                           | Yes  | Trigger immediate backup    |
-
-Protected endpoints require an active session created through `/api/login`.
-
----
-
-## 8. Application Pages
-
-### Login (`login.html`)
-
-* Session-based authentication.
-* Password verification using bcrypt.
-* Redirects authenticated users to the dashboard.
-
-### Dashboard (`home.html`)
-
-* Displays monitored database instances and connection status.
-* Shows instance details and latest backup information.
-* Supports backup scheduling and manual backup execution.
-
-### Add New Instance (`addInstance.html`)
-
-* Register a database server using IP address and port.
-* Validate connectivity through a TCP socket connection test.
-* Store remote database credentials for backup operations.
-
-### Backup History (`backupHistory.html`)
-
-* Displays previously executed backups.
-* Shows backup date, location, duration, size, and remarks.
-
-### Reports (`reports.html`)
-
-* Reserved for future reporting and analytics features.
+| Method | Endpoint | Description |
+|---|---|---|
+| POST | `/api/login` | Login |
+| GET | `/api/session` | Session status |
+| GET | `/api/logout` | Logout |
+| GET | `/api/instances` | List instances |
+| POST | `/api/instances` | Register instance |
+| PUT | `/api/instances/:id` | Update instance |
+| DELETE | `/api/instances/:id` | Delete instance |
+| GET | `/api/instances/check-connection` | Validate TCP connection |
+| POST | `/api/backup/now` | Execute backup |
+| POST | `/api/backup/schedule` | Schedule backup |
+| PUT | `/api/backup/schedule/:id` | Edit schedule |
+| DELETE | `/api/backup/schedule/:id` | Cancel schedule |
+| GET | `/api/backup/reports` | Reports |
+| GET | `/api/backup/export` | Export CSV |
+| GET | `/api/backup/download/:historyId` | Download backup |
+| GET | `/api/filesystem/list` | Browse folders |
 
 ---
 
-## 9. Notes on Remote Database Servers
+# Backup Engine
 
-Each row in `instances` represents a separate database server identified by its own:
+Each registered database instance maintains its IP address, port number, database type, authentication credentials, backup destination, and scheduling configuration required for remote backup execution.
 
-```text
-instance_ip + port_number
-```
+Whenever a backup is initiated—either manually or through a scheduled job—the application:
 
-The **Check Connection** feature opens a real TCP socket to the specified IP and port to verify reachability before an instance is added.
+1. Retrieves the target database instance from MySQL.
+2. Verifies server reachability by attempting to establish a TCP socket connection.
+3. Selects the appropriate native backup utility based on the configured database type.
+4. Executes the backup utility against the remote database server.
+5. Stores the generated backup file in the selected backup directory.
+6. Logs the backup status, execution time, duration, file size, and remarks in the `backup_history` table.
 
-The backup engine is currently implemented with simulated backup metadata. In production, this can be integrated with database-specific tools such as:
+Supported backup utilities:
 
-* MySQL → `mysqldump`
-* Oracle → `expdp` / `RMAN`
-* PostgreSQL → `pg_dump`
-* SQL Server → `sqlcmd` or SQL Server Agent jobs
+- **MySQL** → `mysqldump`
+- **Oracle** → `exp`
+- **PostgreSQL** → `pg_dump`
+
+## Scheduled Backup Mechanism
+
+Instead of using **node-cron**, the application schedules one-time backup jobs using JavaScript's `setTimeout()`.
+
+Since JavaScript timers exist only in process memory, all active `setTimeout()` timers are lost whenever the Node.js server restarts. During application startup, the `reloadScheduledJobs()` function reloads every pending backup schedule from the database, recalculates the remaining execution time, and recreates the corresponding timers.
+
+On every server restart:
+
+- Pending backup schedules are loaded from the database.
+- Remaining execution time is recalculated.
+- New `setTimeout()` timers are created automatically.
+- Previously scheduled backups continue to execute without requiring users to recreate them.
+
+This approach keeps scheduling lightweight while ensuring scheduled backups are not lost after application restarts.
 
 ---
 
-## 10. Security Notes
+# Security
 
-* Passwords are hashed using bcrypt.
-* Sessions are managed using express-session.
-* Protected routes require authentication.
-* Database credentials are never exposed through the UI after saving.
-* Unauthorized users are redirected to the login page.
-* Use a strong `SESSION_SECRET` in production.
-* Consider HTTPS and login rate-limiting for production deployments.
-* Replace the default in-memory session store with Redis or MySQL for production use.
+- Passwords are hashed using bcrypt.
+- Session-based authentication using express-session.
+- Parameterized SQL queries prevent SQL injection.
+- Protected API routes require authentication.
+- Backup downloads are validated before being served.
+- Sensitive configuration is stored in `.env`.
+- TCP connectivity can be verified before adding new database instances.
+
+# Reliability
+
+- TCP socket connectivity is verified before registering remote database instances.
+- Pending scheduled backups are automatically restored after application restart using `reloadScheduledJobs()`.
+- One-time backup schedules persist across server restarts without relying on `node-cron`.
+- Backup execution history is stored in MySQL for auditing and reporting.
+- Native database backup utilities are executed through controlled child processes.
+
+---
+
+<div align="center">
+
+Developed during my Software Development Internship at **East Coast Railway**
+
+**Backup Monitoring System • Version 1.0**
+
+</div>
