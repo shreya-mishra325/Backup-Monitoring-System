@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Backup Monitoring System - Home</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
 </head>
@@ -92,15 +94,21 @@
                         </div>
                         <div class="form-group">
                             <label>Path</label>
-                            <input type="text" name="backupPath" id="schedulePath" placeholder="Specify the path">
+                            <div class="path-input-row">
+                                <input type="text" name="backupPath" id="schedulePath" placeholder="Type a path, e.g. C:\Users\yourname\Backups, or click Browse">
+                                <button type="button" class="btn btn-secondary btn-sm browse-btn" onclick="openFolderBrowser('schedulePath')">
+                                    <i class="fa-solid fa-folder-open"></i> Browse
+                                </button>
+                            </div>
                         </div>
                         <div class="form-group">
-                            <label>Backup Date &amp; Time (dd.mm.yyyy hh:mm AM/PM)</label>
-                            <input type="text" name="backupDateTime" id="scheduleDateTime" placeholder="25.05.2025 10:30 AM">
+                            <label>Backup Date &amp; Time</label>
+                            <input type="datetime-local" name="backupDateTime" id="scheduleDateTime">
+                            <div class="field-error" id="scheduleDateTimeError"></div>
                         </div>
                         <button type="button" class="btn btn-primary btn-sm" id="scheduleBtn">Schedule Backup</button>
                         <div class="action-result" id="scheduleResult"></div>
-                        <div class="note">Note: If one backup is scheduled then another backup can't be scheduled.</div>
+                        <div class="note">Note: Multiple backups can be scheduled for the same or different instances, provided no two backup operations can share the same scheduled date &amp; time</div>
                     </form>
                 </div>
                 <div class="backup-panel">
@@ -116,7 +124,12 @@
                         </div>
                         <div class="form-group">
                             <label>Path</label>
-                            <input type="text" name="backupPath" id="nowPath" placeholder="Specify the path">
+                            <div class="path-input-row">
+                                <input type="text" name="backupPath" id="nowPath" placeholder="Type a path, e.g. C:\Users\yourname\Backups, or click Browse">
+                                <button type="button" class="btn btn-secondary btn-sm browse-btn" onclick="openFolderBrowser('nowPath')">
+                                    <i class="fa-solid fa-folder-open"></i> Browse
+                                </button>
+                            </div>
                         </div>
                         <button type="button" class="btn btn-success btn-sm" id="backupNowBtn">Backup Now</button>
                         <div class="action-result" id="backupNowResult"></div>
@@ -143,10 +156,12 @@
             <div class="form-group">
                 <label>IP Address</label>
                 <input type="text" id="editInstanceIp">
+                <div class="field-error" id="editInstanceIpError"></div>
             </div>
             <div class="form-group">
                 <label>Port Number</label>
                 <input type="number" id="editPortNumber">
+                <div class="field-error" id="editPortNumberError"></div>
             </div>
             <div class="form-group">
                 <label>Database Username</label>
@@ -194,8 +209,60 @@
     </div>
 </div>
 
-<script src="js/app.js"></script>
-<script src="js/home.js"></script>
+<div class="modal-overlay" id="folderBrowserModal">
+    <div class="modal folder-browser-modal">
+        <div class="modal-header">
+            <h2><i class="fa-solid fa-folder-open"></i> Select Backup Folder</h2>
+        </div>
+        <div class="modal-body">
+            <div class="folder-browser-toolbar">
+                <button type="button" class="icon-btn" id="folderBrowserUpBtn" title="Up one level">
+                    <i class="fa-solid fa-arrow-up"></i>
+                </button>
+                <input type="text" class="folder-browser-path" id="folderBrowserPath" placeholder="Type a full path, e.g. C:\Users\yourname\Downloads">
+                <button type="button" class="btn btn-secondary btn-sm" id="folderBrowserGoBtn" title="Go to this path">
+                    <i class="fa-solid fa-arrow-right"></i> Go
+                </button>
+            </div>
+            <div class="folder-browser-hint">Double-click a folder to open it, or type/paste any path above and press Enter / Go.</div>
+            <div class="folder-browser-list" id="folderBrowserList">
+                <div class="folder-browser-message">Loading...</div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" id="folderBrowserCancelBtn">Cancel</button>
+            <button type="button" class="btn btn-primary" id="folderBrowserSelectBtn">
+                <i class="fa-solid fa-check"></i> Select This Folder
+            </button>
+        </div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="backupProgressModal">
+    <div class="modal backup-progress-modal">
+        <div class="modal-header">
+            <h2><i class="fa-solid fa-database"></i> <span id="progressModalTitle">Backup in Progress</span></h2>
+        </div>
+        <div class="modal-body">
+            <div class="progress-bar-track">
+                <div class="progress-bar-fill" id="progressBarFill"></div>
+            </div>
+            <div class="progress-bar-percentage" id="progressBarPercentage">0%</div>
+            <ul class="progress-stage-list" id="progressStageList">
+                <li data-stage="init"><i class="fa-solid fa-circle"></i> Initializing</li>
+                <li data-stage="connect"><i class="fa-solid fa-circle"></i> Connecting to Database</li>
+                <li data-stage="export"><i class="fa-solid fa-circle"></i> Exporting Data</li>
+                <li data-stage="compress"><i class="fa-solid fa-circle"></i> Compressing</li>
+                <li data-stage="save"><i class="fa-solid fa-circle"></i> Saving</li>
+                <li data-stage="done"><i class="fa-solid fa-circle"></i> Completed</li>
+            </ul>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-primary" id="progressCloseBtn" style="display:none;">Close</button>
+        </div>
+    </div>
+</div>
+
     <script src="js/app.js"></script>
     <script src="js/home.js"></script>
 </body>

@@ -53,5 +53,8 @@ document.addEventListener("DOMContentLoaded", function () {
     function showError(message) {
         errorBox.textContent = message;
         errorBox.style.display = "block";
+        if (typeof showToast === "function") {
+            showToast(message, false);
+        }
     }
 });

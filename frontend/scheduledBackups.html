@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Backup Monitoring System - Scheduled Backups</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+</head>
+<body data-active-tab="scheduledBackups">
+    <div class="topbar" id="topbar"></div>
+    <div class="tabs" id="tabs"></div>
+    <div class="instance-details-panel" style="margin:24px;">
+        <div class="panel-title">
+            Scheduled Backups
+        </div>
+        <table class="report-table">
+            <thead>
+                <tr>
+                    <th>Instance</th>
+                    <th>Backup Location</th>
+                    <th>Scheduled For</th>
+                    <th>Status</th>
+                    <th>Created At</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="scheduledBackupsBody">
+                <tr>
+                    <td colspan="6" style="text-align:center;">
+                        Loading...
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    <div class="modal-overlay" id="rescheduleModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2>Edit Scheduled Backup</h2>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="rescheduleId">
+                <div class="form-group">
+                    <label for="rescheduleLocation">Backup Location</label>
+                    <select id="rescheduleLocation">
+                        <option value="Local Drive">Local Drive</option>
+                        <option value="Google Drive">Google Drive</option>
+                        <option value="Filer Server">Filer Server</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Path</label>
+                    <div class="path-input-row">
+                        <input type="text" id="reschedulePath" placeholder="Type a path, e.g. C:\Users\yourname\Backups, or click Browse">
+                        <button type="button" class="btn btn-secondary btn-sm browse-btn" onclick="openFolderBrowser('reschedulePath')">
+                            <i class="fa-solid fa-folder-open"></i> Browse
+                        </button>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="rescheduleDateTime">Backup Date &amp; Time</label>
+                    <input type="datetime-local" id="rescheduleDateTime">
+                    <div class="field-error" id="rescheduleDateTimeError"></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="cancelRescheduleBtn">Cancel</button>
+                <button class="btn btn-primary" id="saveRescheduleBtn">Save Changes</button>
+            </div>
+        </div>
+    </div>
+    <div class="modal-overlay" id="cancelScheduleModal">
+        <div class="modal delete-modal">
+            <div class="modal-header">
+                <h2>Cancel Scheduled Backup</h2>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to cancel this scheduled backup?</p>
+                <p style="margin-top:8px;color:#e74c3c;font-size:13px;">
+                    This backup will no longer run at its scheduled time. It stays visible in the history as "Cancelled".
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="closeCancelScheduleBtn">Keep it</button>
+                <button class="btn btn-danger" id="confirmCancelScheduleBtn">Cancel Backup</button>
+            </div>
+        </div>
+    </div>
+    <div class="modal-overlay" id="folderBrowserModal">
+        <div class="modal folder-browser-modal">
+            <div class="modal-header">
+                <h2><i class="fa-solid fa-folder-open"></i> Select Backup Folder</h2>
+            </div>
+            <div class="modal-body">
+                <div class="folder-browser-toolbar">
+                    <button type="button" class="icon-btn" id="folderBrowserUpBtn" title="Up one level">
+                        <i class="fa-solid fa-arrow-up"></i>
+                    </button>
+                    <input type="text" class="folder-browser-path" id="folderBrowserPath" placeholder="Type a full path, e.g. C:\Users\yourname\Downloads">
+                    <button type="button" class="btn btn-secondary btn-sm" id="folderBrowserGoBtn" title="Go to this path">
+                        <i class="fa-solid fa-arrow-right"></i> Go
+                    </button>
+                </div>
+                <div class="folder-browser-hint">Double-click a folder to open it, or type/paste any path above and press Enter / Go.</div>
+                <div class="folder-browser-list" id="folderBrowserList">
+                    <div class="folder-browser-message">Loading...</div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" id="folderBrowserCancelBtn">Cancel</button>
+                <button type="button" class="btn btn-primary" id="folderBrowserSelectBtn">
+                    <i class="fa-solid fa-check"></i> Select This Folder
+                </button>
+            </div>
+        </div>
+    </div>
+    <script src="js/app.js"></script>
+    <script src="js/reports.js"></script>
+</body>
+</html>

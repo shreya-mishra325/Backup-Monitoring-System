@@ -5,6 +5,14 @@ document.addEventListener("DOMContentLoaded", function () {
     document.getElementById("checkConnectionBtn").addEventListener("click", checkConnection);
     document.getElementById("addInstanceForm").addEventListener("submit", submitForm);
 
+    const ipInput   = document.getElementById("instanceIp");
+    const portInput = document.getElementById("portNumber");
+    const ipError    = document.getElementById("instanceIpError");
+    const portError  = document.getElementById("portNumberError");
+
+    ipInput.addEventListener("input", () => clearFieldError(ipInput, ipError));
+    portInput.addEventListener("input", () => clearFieldError(portInput, portError));
+
     document.getElementById("databaseType").addEventListener("change", function () {
         const defaults = { MySQL: 3306, Oracle: 1521, PostgreSQL: 5432, "SQL Server": 1433 };
         const port = document.getElementById("portNumber");
@@ -14,15 +22,47 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 });
 
-function checkConnection() {
-    const ip   = document.getElementById("instanceIp").value.trim();
-    const port = document.getElementById("portNumber").value.trim();
-    const box  = document.getElementById("connectionResult");
+function validateIpPortFields() {
+    const ipInput    = document.getElementById("instanceIp");
+    const portInput  = document.getElementById("portNumber");
+    const ipError    = document.getElementById("instanceIpError");
+    const portError  = document.getElementById("portNumberError");
 
-    if (!ip || !port) {
-        showConnectionResult("Please enter Instance IP and Port Number first.", false);
+    let valid = true;
+
+    const ip = ipInput.value.trim();
+    if (!ip) {
+        setFieldError(ipInput, ipError, "IP address is required.");
+        valid = false;
+    } else if (!isValidIPv4(ip)) {
+        setFieldError(ipInput, ipError, "Enter a valid IPv4 address (each part 0-255).");
+        valid = false;
+    } else {
+        clearFieldError(ipInput, ipError);
+    }
+
+    const port = portInput.value.trim();
+    if (!port) {
+        setFieldError(portInput, portError, "Port number is required.");
+        valid = false;
+    } else if (!isValidPort(port)) {
+        setFieldError(portInput, portError, "Enter a valid port between 1 and 65535.");
+        valid = false;
+    } else {
+        clearFieldError(portInput, portError);
+    }
+
+    return valid;
+}
+
+function checkConnection() {
+    if (!validateIpPortFields()) {
+        showToast("Please fix the highlighted fields before checking connection.", false);
         return;
     }
+
+    const ip   = document.getElementById("instanceIp").value.trim();
+    const port = document.getElementById("portNumber").value.trim();
 
     showConnectionResult("Checking connection...", null);
 
@@ -31,8 +71,8 @@ function checkConnection() {
         .then(data => {
             const ok = data.status === "Connected";
             showConnectionResult(
-                ok ? "✔ Connection successful — server is reachable."
-                   : "✘ Connection failed — server is not reachable on that IP/port.",
+                ok ? "Connection successful — server is reachable."
+                   : "Connection failed — server is not reachable on that IP/port.",
                 ok
             );
             connectionChecked = true;
@@ -42,6 +82,11 @@ function checkConnection() {
 
 function submitForm(e) {
     e.preventDefault();
+
+    if (!validateIpPortFields()) {
+        showToast("Please fix the highlighted fields before submitting.", false);
+        return;
+    }
 
     const payload = {
         action:       connectionChecked ? "checkAndAdd" : "add",
@@ -81,14 +126,9 @@ function submitForm(e) {
 }
 
 function showAddResult(msg, ok) {
-    const el = document.getElementById("addResult");
-    el.textContent = msg;
-    el.className   = "action-result " + (ok === true ? "success" : ok === false ? "error" : "");
+    showToast(msg, ok);
 }
 
 function showConnectionResult(msg, ok) {
-    const el = document.getElementById("connectionResult");
-    el.textContent = msg;
-    el.style.display = "block";
-    el.className = "connection-result " + (ok === true ? "success" : ok === false ? "error" : "");
+    showToast(msg, ok);
 }

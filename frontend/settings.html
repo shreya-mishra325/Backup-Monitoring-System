@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Backup Monitoring System - Settings</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+</head>
+<body>
+    <div class="topbar" id="topbar"></div>
+    <div class="tabs" id="tabs"></div>
+    <div class="settings-container">
+        <div class="settings-card">
+            <div class="settings-card-header">
+                <div class="settings-card-icon"><i class="fa-solid fa-user"></i></div>
+                <div>
+                    <h3>Account</h3>
+                    <p>Your session information</p>
+                </div>
+            </div>
+            <div class="settings-profile-row">
+                <div class="settings-avatar" id="settingsAvatar">A</div>
+                <div>
+                    <div class="settings-profile-name" id="settingsUsername">-</div>
+                    <div class="settings-profile-role">Administrator</div>
+                </div>
+            </div>
+        </div>
+        <div class="settings-card">
+            <div class="settings-card-header">
+                <div class="settings-card-icon"><i class="fa-solid fa-palette"></i></div>
+                <div>
+                    <h3>Appearance</h3>
+                    <p>Personalize how the dashboard looks on this device</p>
+                </div>
+            </div>
+            <div class="settings-row">
+                <div>
+                    <div class="settings-row-label">Compact sidebar</div>
+                    <div class="settings-row-desc">Show icons only in the navigation sidebar</div>
+                </div>
+                <label class="settings-switch">
+                    <input type="checkbox" id="compactSidebarToggle">
+                    <span class="settings-switch-track"></span>
+                </label>
+            </div>
+        </div>
+        <div class="settings-card">
+            <div class="settings-card-header">
+                <div class="settings-card-icon"><i class="fa-solid fa-key"></i></div>
+                <div>
+                    <h3>Change Password</h3>
+                    <p>Update the password used to sign in to this account</p>
+                </div>
+            </div>
+            <form id="changePasswordForm" class="change-password-form">
+                <div class="form-group">
+                    <label for="currentPassword">Current Password</label>
+                    <input type="password" id="currentPassword" name="currentPassword" placeholder="Enter current password" required>
+                    <div class="field-error" id="currentPasswordError"></div>
+                </div>
+                <div class="form-group">
+                    <label for="newPassword">New Password</label>
+                    <input type="password" id="newPassword" name="newPassword" placeholder="At least 6 characters" required minlength="6">
+                    <div class="field-error" id="newPasswordError"></div>
+                </div>
+                <div class="form-group">
+                    <label for="confirmNewPassword">Confirm New Password</label>
+                    <input type="password" id="confirmNewPassword" name="confirmNewPassword" placeholder="Re-enter new password" required minlength="6">
+                    <div class="field-error" id="confirmNewPasswordError"></div>
+                </div>
+                <button type="submit" class="btn btn-primary" id="changePasswordBtn">
+                    <i class="fa-solid fa-key"></i>
+                    Update Password
+                </button>
+            </form>
+        </div>
+        <div class="settings-card">
+            <div class="settings-card-header">
+                <div class="settings-card-icon"><i class="fa-solid fa-bell"></i></div>
+                <div>
+                    <h3>Notifications</h3>
+                    <p>Choose what this browser alerts you about</p>
+                </div>
+            </div>
+            <div class="settings-row">
+                <div>
+                    <div class="settings-row-label">Failed backup alerts</div>
+                    <div class="settings-row-desc">Show a banner reminder when a backup fails</div>
+                </div>
+                <label class="settings-switch">
+                    <input type="checkbox" id="failedAlertsToggle" checked>
+                    <span class="settings-switch-track"></span>
+                </label>
+            </div>
+
+            <div class="settings-row">
+                <div>
+                    <div class="settings-row-label">Auto-refresh instance status</div>
+                    <div class="settings-row-desc">Poll instance connectivity every 10 seconds on the Home tab</div>
+                </div>
+                <label class="settings-switch">
+                    <input type="checkbox" id="autoRefreshToggle" checked disabled>
+                    <span class="settings-switch-track"></span>
+                </label>
+            </div>
+        </div>
+        <div class="settings-card">
+            <div class="settings-card-header">
+                <div class="settings-card-icon"><i class="fa-solid fa-circle-info"></i></div>
+                <div>
+                    <h3>About</h3>
+                    <p>System information</p>
+                </div>
+            </div>
+            <div class="settings-about-grid">
+                <div class="settings-about-item">
+                    <label>Application</label>
+                    <div>Backup Monitoring System</div>
+                </div>
+                <div class="settings-about-item">
+                    <label>Version</label>
+                    <div>1.0.0</div>
+                </div>
+                <div class="settings-about-item">
+                    <label>Supported Databases</label>
+                    <div>MySQL, Oracle, PostgreSQL, SQL Server</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="js/app.js"></script>
+    <script src="js/settings.js"></script>
+</body>
+</html>

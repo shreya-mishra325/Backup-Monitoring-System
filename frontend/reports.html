@@ -3,122 +3,69 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Backup Monitoring System - Backup History</title>
+    <title>Backup Monitoring System - Reports</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
 </head>
-<body>
+<body data-active-tab="reports">
     <div class="topbar" id="topbar"></div>
     <div class="tabs" id="tabs"></div>
-    <div class="instance-details-panel" style="margin:24px;">
-        <div class="panel-title">
-            Backup Reports
+
+    <div class="stat-cards-row">
+        <div class="stat-card">
+            <div class="stat-card-icon blue"><i class="fa-solid fa-server"></i></div>
+            <div class="stat-card-value" id="totalInstances">-</div>
+            <div class="stat-card-label">Total Instances</div>
+            <div class="stat-card-sub">Registered instances</div>
         </div>
-        <div class="details-grid">
-            <div class="detail-row">
-                <label>Total Instances</label>
-                <div class="detail-value" id="totalInstances">-</div>
-            </div>
-
-            <div class="detail-row">
-                <label>Total Backups</label>
-                <div class="detail-value" id="totalBackups">-</div>
-            </div>
-
-            <div class="detail-row">
-                <label>Successful Backups</label>
-                <div class="detail-value" id="successfulBackups">-</div>
-            </div>
-
-            <div class="detail-row">
-                <label>Failed Backups</label>
-                <div class="detail-value" id="failedBackups">-</div>
-            </div>
-
-            <div class="detail-row">
-                <label>Success Rate</label>
-                <div class="detail-value" id="successRate">-</div>
-            </div>
-
-            <div class="detail-row">
-                <label>Average Backup Size</label>
-                <div class="detail-value" id="averageBackupSize">-</div>
-            </div>
-
+        <div class="stat-card">
+            <div class="stat-card-icon blue"><i class="fa-solid fa-database"></i></div>
+            <div class="stat-card-value" id="totalBackups">-</div>
+            <div class="stat-card-label">Total Backups</div>
+            <div class="stat-card-sub">All backups</div>
         </div>
-
+        <div class="stat-card">
+            <div class="stat-card-icon green"><i class="fa-solid fa-circle-check"></i></div>
+            <div class="stat-card-value" id="successfulBackups">-</div>
+            <div class="stat-card-label">Successful Backups</div>
+            <div class="stat-card-sub" id="successRate">-</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-card-icon red"><i class="fa-solid fa-circle-xmark"></i></div>
+            <div class="stat-card-value" id="failedBackups">-</div>
+            <div class="stat-card-label">Failed Backups</div>
+            <div class="stat-card-sub">Failure rate</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-card-icon purple"><i class="fa-solid fa-file-lines"></i></div>
+            <div class="stat-card-value" id="averageBackupSize">-</div>
+            <div class="stat-card-label">Average Backup Size</div>
+            <div class="stat-card-sub">Per backup</div>
+        </div>
     </div>
-
     <div class="charts-row">
-        <div class="instance-details-panel chart-panel">
-            <div class="panel-title">
-                Backup Status Distribution
-            </div>
-            <div class="chart-container">
+    <div class="instance-details-panel chart-panel">
+        <div class="panel-title">
+            Backup Status Distribution
+        </div>
+        <div class="donut-chart-row">
+            <div class="chart-container donut-chart-container">
                 <canvas id="statusPieChart"></canvas>
             </div>
-        </div>
-
-        <div class="instance-details-panel chart-panel">
-            <div class="panel-title">
-                Backups by Instance
-            </div>
-            <div class="chart-container">
-                <canvas id="instanceBarChart"></canvas>
-            </div>
+            <div class="donut-legend" id="donutLegend"></div>
         </div>
     </div>
-
-    <div class="instance-details-panel" style="margin:24px; margin-top:0;">
+    <div class="instance-details-panel chart-panel">
         <div class="panel-title">
-            Instance-wise Backup Summary
+            Backups by Instance
         </div>
-        <table class="report-table">
-            <thead>
-                <tr>
-                    <th>Instance Name</th>
-                    <th>Total Backups</th>
-                    <th>Successful</th>
-                    <th>Failed</th>
-                </tr>
-
-            </thead>
-            <tbody id="instanceSummaryBody">
-                <tr>
-                    <td colspan="4" style="text-align:center;">
-                        Loading...
-                    </td>
-                </tr>
-            </tbody>
-        </table>
-    </div>
-
-    <div class="instance-details-panel" style="margin:24px; margin-top:0;">
-        <div class="panel-title">
-            Recent Backup Activity
-        </div>
-        <table class="report-table">
-            <thead>
-                <tr>
-                    <th>Date &amp; Time</th>
-                    <th>Instance</th>
-                    <th>Status</th>
-                    <th>Remarks</th>
-                </tr>
-            </thead>
-            <tbody id="recentActivityBody">
-                <tr>
-                    <td colspan="4" style="text-align:center;">
-                        Loading...
-                    </td>
-                </tr>
-            </tbody>
-        </table>
-        <div style="margin-top:16px;">
-            <button class="btn btn-primary" id="exportCsvBtn">
-                Export CSV
-            </button>
+        <div class="chart-container">
+            <canvas id="instanceBarChart"></canvas>
         </div>
     </div>
+</div>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="js/app.js"></script>
     <script src="js/reports.js"></script>
